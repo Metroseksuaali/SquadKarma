@@ -1,0 +1,120 @@
+// Squad Karma - Database Schema
+// Run "npx prisma db push" to sync with database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER - Authenticated Steam users
+// ============================================
+model User {
+  id          String   @id @default(cuid())
+  steam64     String   @unique
+  displayName String
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  lastLogin   DateTime @default(now())
+  isBanned    Boolean  @default(false)
+  
+  // Relations
+  votes       Vote[]   @relation("VoterVotes")
+  
+  @@index([steam64])
+}
+
+// ============================================
+// SERVER - Squad game servers
+// ============================================
+model Server {
+  id        String   @id @default(cuid())
+  name      String
+  ip        String
+  port      Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  
+  // Relations
+  votes     Vote[]
+  
+  @@unique([ip, port])
+}
+
+// ============================================
+// PLAYER - Any player who has received votes
+// ============================================
+model Player {
+  steam64       String   @id
+  lastKnownName String
+  firstSeenAt   DateTime @default(now())
+  lastSeenAt    DateTime @default(now())
+  
+  // Relations
+  receivedVotes Vote[]
+  
+  @@index([lastKnownName])
+}
+
+// ============================================
+// REASON CATEGORY - Vote reason categories
+// ============================================
+model ReasonCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  type      VoteType
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  
+  // Relations
+  votes     Vote[]
+}
+
+// ============================================
+// VOTE - Individual reputation votes
+// ============================================
+model Vote {
+  id               String         @id @default(cuid())
+  
+  // Who voted
+  voter            User           @relation("VoterVotes", fields: [voterSteam64], references: [steam64])
+  voterSteam64     String
+  
+  // Who received the vote
+  target           Player         @relation(fields: [targetSteam64], references: [steam64])
+  targetSteam64    String
+  
+  // On which server
+  server           Server         @relation(fields: [serverId], references: [id])
+  serverId         String
+  
+  // Vote details
+  reasonCategory   ReasonCategory @relation(fields: [reasonCategoryId], references: [id])
+  reasonCategoryId Int
+  direction        VoteDirection
+  
+  createdAt        DateTime       @default(now())
+  
+  // Indexes for efficient queries
+  @@index([voterSteam64, targetSteam64, createdAt])
+  @@index([targetSteam64, createdAt])
+  @@index([serverId])
+}
+
+// ============================================
+// ENUMS
+// ============================================
+enum VoteDirection {
+  UP
+  DOWN
+}
+
+enum VoteType {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
