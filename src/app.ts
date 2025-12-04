@@ -5,8 +5,9 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
+import RedisStore from 'fastify-session-redis-store';
 import { AppError } from './utils/errors.js';
-import { createSessionStore } from './db/session-store.js';
+import { redis } from './db/redis.js';
 import { authRoutes } from './modules/auth/index.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -28,20 +29,21 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Cookies (required for sessions)
   await app.register(cookie);
 
-  // Create Redis session store
-  const sessionStore = createSessionStore({
+  // Create Redis session store using official package
+  const redisStore = new RedisStore({
+    client: redis,
     prefix: 'squadkarma:sess:',
-    ttl: 60 * 60 * 24 * 7, // 7 days
+    ttl: 60 * 60 * 24 * 7, // 7 days in seconds
   });
 
   // Session with Redis store
   await app.register(session, {
     secret: process.env.SESSION_SECRET || 'change-this-secret-min-32-chars!',
-    store: sessionStore,
+    store: redisStore,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days in milliseconds
       sameSite: 'lax',
     },
   });
