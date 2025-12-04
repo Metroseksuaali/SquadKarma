@@ -1,63 +1,63 @@
 # Squad Karma API
 
-Squad-pelaajien reputaatiojärjestelmän backend.
+Backend for Squad player reputation system.
 
-## Vaatimukset
+## Requirements
 
 - Node.js 20+
 - PostgreSQL 15+
 - Redis 7+
 
-## Asennus
+## Installation
 
 ```bash
-# Asenna riippuvuudet
+# Install dependencies
 npm install
 
-# Kopioi ympäristömuuttujat
+# Copy environment variables
 cp .env.example .env
-# Muokkaa .env tiedostoa omilla arvoillasi
+# Edit .env file with your own values
 
-# Alusta tietokanta
+# Initialize database
 npm run db:push
 
-# Lisää peruskategoriat
+# Add base categories
 npm run db:seed
 
-# Käynnistä kehityspalvelin
+# Start development server
 npm run dev
 ```
 
-## Ympäristömuuttujat
+## Environment Variables
 
-| Muuttuja | Kuvaus |
-|----------|--------|
-| `DATABASE_URL` | PostgreSQL-yhteysosoite |
-| `REDIS_URL` | Redis-yhteysosoite |
-| `STEAM_API_KEY` | Steam Web API -avain |
-| `SESSION_SECRET` | Sessioiden salausavain (min 32 merkkiä) |
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `REDIS_URL` | Redis connection string |
+| `STEAM_API_KEY` | Steam Web API key |
+| `SESSION_SECRET` | Session encryption key (min 32 characters) |
 
-## API-endpointit
+## API Endpoints
 
 ```
-GET  /health                         - Terveystarkistus
-GET  /auth/steam                     - Aloita Steam-kirjautuminen
-GET  /auth/steam/callback            - Steam-callback
-GET  /auth/me                        - Kirjautunut käyttäjä
-POST /auth/logout                    - Kirjaudu ulos
+GET  /health                         - Health check
+GET  /auth/steam                     - Start Steam login
+GET  /auth/steam/callback            - Steam callback
+GET  /auth/me                        - Logged-in user
+POST /auth/logout                    - Log out
 
-GET  /api/servers                    - Lista servereistä
-GET  /api/players/:steam64           - Pelaajan tiedot
-GET  /api/players/:steam64/reputation - Reputaatiotilastot
-GET  /api/reason-categories          - Syykategoriat
-POST /api/votes                      - Anna ääni
+GET  /api/servers                    - List of servers
+GET  /api/players/:steam64           - Player details
+GET  /api/players/:steam64/reputation - Reputation stats
+GET  /api/reason-categories          - Reason categories
+POST /api/votes                      - Submit vote
 ```
 
-## Kehityskomennot
+## Development Commands
 
 ```bash
-npm run dev          # Käynnistä kehityspalvelin
-npm run build        # Käännä tuotantoversioksi
-npm run db:studio    # Avaa Prisma Studio (tietokannan hallinta)
-npm run db:migrate   # Luo uusi migraatio
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run db:studio    # Open Prisma Studio (database management)
+npm run db:migrate   # Create new migration
 ```

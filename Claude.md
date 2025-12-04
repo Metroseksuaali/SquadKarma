@@ -1,111 +1,111 @@
 # Squad Karma - Project Context for Claude
 
-> Tämä tiedosto sisältää kaiken oleellisen kontekstin projektista Claude-assistentille.
-> Päivitä tätä tiedostoa kun projekti etenee.
+> This file contains all essential context about the project for Claude assistant.
+> Update this file as the project progresses.
 
 ---
 
 ## 📦 GitHub Repository
 
 - **Repo:** https://github.com/Metroseksuaali/SquadKarma
-- **Kehityshaara:** `dev` (pääasiallinen työhaara)
-- **Tuotanto:** `main` (vain valmiit releaset)
-- **Lokaali polku:** `O:\vibecode\SquadKarma_new`
+- **Development branch:** `dev` (primary working branch)
+- **Production:** `main` (releases only)
+- **Local path:** `O:\vibecode\SquadKarma_new`
 
-### Git-työskentely
+### Git Workflow
 ```bash
-# Varmista että olet dev-branchissa
+# Make sure you're on dev branch
 git checkout dev
 
-# Vedä uusimmat muutokset
+# Pull latest changes
 git pull origin dev
 
-# Committaa muutokset
+# Commit changes
 git add .
-git commit -m "feat: kuvaus"
+git commit -m "feat: description"
 git push origin dev
 ```
 
 ---
 
-## 🎯 Projektin Tavoite
+## 🎯 Project Goal
 
-**Squad Karma** on community-projekti, joka tarjoaa reputaatiojärjestelmän Squad-pelin pelaajille.
+**Squad Karma** is a community project that provides a reputation system for Squad game players.
 
-### Ydinominaisuudet:
-1. **Steam-kirjautuminen** - Käyttäjät kirjautuvat Steam-tilillään
-2. **Serveri- ja pelaajahaku** - Valitse serveri ja löydä pelaaja
-3. **Äänestys** - Anna peukku ylös/alas + syykategoria
-4. **Reputaation katselu** - Näe pelaajan kokonaisreputaatio ja historia
-5. **Cooldown** - Sama käyttäjä voi äänestää samaa pelaajaa vain kerran tunnissa
+### Core Features:
+1. **Steam Login** - Users authenticate with their Steam account
+2. **Server & Player Search** - Select a server and find players
+3. **Voting** - Give thumbs up/down + reason category
+4. **Reputation Viewing** - See player's overall reputation and history
+5. **Cooldown** - Same user can only vote for the same player once per hour
 
-### Ei ole:
-- Virallinen OWI:n projekti
-- Pelkästään negatiivinen "lynkkauspalvelu"
-- Vapaatekstipohjainen (vältetään häirintä)
+### What it's NOT:
+- Official OWI project
+- A purely negative "lynch mob service"
+- Free-text based (to prevent harassment)
 
 ---
 
-## 🏗️ Arkkitehtuuri
+## 🏗️ Architecture
 
 ### Tech Stack
 
-| Kerros | Teknologia | Miksi |
-|--------|------------|-------|
-| **Frontend** | React + TypeScript + Vite | Komponenttipohjainen, nopea kehitys |
-| **Styling** | Tailwind CSS | Utility-first, tumma teema |
-| **State** | TanStack Query + Zustand | Server state + client state erikseen |
-| **Backend** | Node.js + Fastify + TypeScript | Nopea, Steam-kirjastot |
-| **Database** | PostgreSQL + Prisma ORM | Relaatiotietokanta, tyyppiturva |
-| **Cache** | Redis | Cooldown, rate limiting, sessiot |
+| Layer | Technology | Why |
+|-------|------------|-----|
+| **Frontend** | React + TypeScript + Vite | Component-based, fast development |
+| **Styling** | Tailwind CSS | Utility-first, dark theme |
+| **State** | TanStack Query + Zustand | Server state + client state separately |
+| **Backend** | Node.js + Fastify + TypeScript | Fast, Steam libraries available |
+| **Database** | PostgreSQL + Prisma ORM | Relational database, type safety |
+| **Cache** | Redis | Cooldown, rate limiting, sessions |
 | **Auth** | @fastify/passport + node-steam-openid | Steam OpenID |
 
-### Kansiorakenne
+### Folder Structure
 
 ```
 SquadKarma/
-├── frontend/                 # React-sovellus
+├── frontend/                 # React application
 │   ├── src/
-│   │   ├── components/       # UI-komponentit
-│   │   │   ├── ui/          # Yleiset (Button, Input, Card)
+│   │   ├── components/       # UI components
+│   │   │   ├── ui/          # Common (Button, Input, Card)
 │   │   │   ├── layout/      # Layout (Header, Footer)
-│   │   │   └── features/    # Ominaisuuskohtaiset
-│   │   ├── pages/           # Sivukomponentit (routing)
+│   │   │   └── features/    # Feature-specific
+│   │   ├── pages/           # Page components (routing)
 │   │   ├── hooks/           # Custom React hooks
-│   │   ├── services/        # API-kutsut
+│   │   ├── services/        # API calls
 │   │   ├── store/           # Zustand state
-│   │   ├── types/           # TypeScript-tyypit
-│   │   └── utils/           # Apufunktiot
-│   └── public/              # Staattiset tiedostot
+│   │   ├── types/           # TypeScript types
+│   │   └── utils/           # Utility functions
+│   └── public/              # Static files
 │
 ├── src/                      # Backend (Node.js)
-│   ├── config/              # Ympäristömuuttujat
-│   ├── db/                  # Tietokantayhteydet
-│   ├── middleware/          # Fastify middlewaret
-│   ├── modules/             # Ominaisuusmoduulit
-│   │   ├── auth/           # Steam-kirjautuminen
-│   │   ├── users/          # Käyttäjähallinta
-│   │   ├── servers/        # Serverilista
-│   │   ├── players/        # Pelaajatiedot
-│   │   ├── votes/          # Äänestyslogiikka
-│   │   └── reputation/     # Reputaatiolaskenta
-│   └── utils/               # Apufunktiot
+│   ├── config/              # Environment variables
+│   ├── db/                  # Database connections
+│   ├── middleware/          # Fastify middlewares
+│   ├── modules/             # Feature modules
+│   │   ├── auth/           # Steam authentication
+│   │   ├── users/          # User management
+│   │   ├── servers/        # Server list
+│   │   ├── players/        # Player data
+│   │   ├── votes/          # Voting logic
+│   │   └── reputation/     # Reputation calculation
+│   └── utils/               # Utility functions
 │
-├── prisma/                   # Tietokantaskeema
-│   ├── schema.prisma        # Tietomalli
-│   └── seed.ts              # Peruskategoriat
+├── prisma/                   # Database schema
+│   ├── schema.prisma        # Data model
+│   └── seed.ts              # Base categories
 │
-└── Claude.md                 # Tämä tiedosto
+└── Claude.md                 # This file
 ```
 
 ---
 
-## 📊 Tietomalli
+## 📊 Data Model
 
-### Entiteetit
+### Entities
 
 ```
-User (Kirjautunut käyttäjä)
+User (Authenticated user)
 ├── id: string (cuid)
 ├── steam64: string (unique)
 ├── displayName: string
@@ -113,7 +113,7 @@ User (Kirjautunut käyttäjä)
 ├── isBanned: boolean
 └── votes: Vote[]
 
-Server (Squad-palvelin)
+Server (Squad server)
 ├── id: string (cuid)
 ├── name: string
 ├── ip: string
@@ -121,14 +121,14 @@ Server (Squad-palvelin)
 ├── isActive: boolean
 └── votes: Vote[]
 
-Player (Äänestyksen kohde)
+Player (Vote target)
 ├── steam64: string (PK)
 ├── lastKnownName: string
 ├── firstSeenAt: DateTime
 ├── lastSeenAt: DateTime
 └── receivedVotes: Vote[]
 
-Vote (Yksittäinen ääni)
+Vote (Individual vote)
 ├── id: string (cuid)
 ├── voterSteam64: string (FK → User)
 ├── targetSteam64: string (FK → Player)
@@ -137,7 +137,7 @@ Vote (Yksittäinen ääni)
 ├── reasonCategoryId: number (FK)
 └── createdAt: DateTime
 
-ReasonCategory (Syykategoria)
+ReasonCategory (Reason category)
 ├── id: number (autoincrement)
 ├── name: string (unique)
 ├── type: POSITIVE | NEGATIVE | NEUTRAL
@@ -145,145 +145,145 @@ ReasonCategory (Syykategoria)
 └── votes: Vote[]
 ```
 
-### Syykategoriat (seed data)
+### Reason Categories (seed data)
 
-**Negatiiviset:**
+**Negative:**
 - Trolling, Teamkilling, Toxic behavior
 - Bad at vehicles, Mic spam, Not following orders
 - Griefing, AFK / Idle
 
-**Positiiviset:**
+**Positive:**
 - Good squad leader, Helpful, Good pilot/driver
 - Team player, Good communication, Skilled player
 - Good commander
 
-**Neutraalit:**
+**Neutral:**
 - New player
 
 ---
 
-## 🔌 API-rajapinnat
+## 🔌 API Endpoints
 
 ### Auth
 ```
-GET  /auth/steam              # Aloita Steam-login
-GET  /auth/steam/callback     # Steam palauttaa tänne
-GET  /auth/me                 # Palauttaa kirjautuneen käyttäjän
-POST /auth/logout             # Kirjaudu ulos
+GET  /auth/steam              # Start Steam login
+GET  /auth/steam/callback     # Steam returns here
+GET  /auth/me                 # Returns logged-in user
+POST /auth/logout             # Log out
 ```
 
 ### Servers
 ```
-GET  /api/servers             # Lista servereistä
-GET  /api/servers/:id         # Yksittäinen serveri
-GET  /api/servers/:id/players # Pelaajat serverillä (TODO: RCON)
+GET  /api/servers             # List of servers
+GET  /api/servers/:id         # Single server
+GET  /api/servers/:id/players # Players on server (TODO: RCON)
 ```
 
 ### Players
 ```
-GET  /api/players/:steam64           # Pelaajan tiedot
-GET  /api/players/:steam64/reputation # Reputaatiotilastot
-GET  /api/players/search?q=          # Haku nimellä
+GET  /api/players/:steam64           # Player details
+GET  /api/players/:steam64/reputation # Reputation stats
+GET  /api/players/search?q=          # Search by name
 ```
 
 ### Votes
 ```
-POST /api/votes                      # Anna ääni
-GET  /api/votes/cooldown/:steam64    # Tarkista cooldown
-GET  /api/reason-categories          # Syykategoriat
+POST /api/votes                      # Submit vote
+GET  /api/votes/cooldown/:steam64    # Check cooldown
+GET  /api/reason-categories          # Reason categories
 ```
 
 ---
 
-## 🔐 Liiketoimintasäännöt
+## 🔐 Business Rules
 
-### Äänestysrajoitukset
-1. **Cooldown**: 1 ääni / tunti / (äänestäjä + kohde) pari
-2. **Rate limit**: Max 10 ääntä / 10 min (globaalisti per käyttäjä)
-3. **Autentikointi**: Vain kirjautuneet voivat äänestää
-4. **Banni**: Bannatut eivät voi äänestää mutta voivat katsoa
+### Voting Restrictions
+1. **Cooldown**: 1 vote / hour / (voter + target) pair
+2. **Rate limit**: Max 10 votes / 10 min (globally per user)
+3. **Authentication**: Only logged-in users can vote
+4. **Ban**: Banned users cannot vote but can view
 
-### Validoinnit
-- Steam64 ID: 17 numeroa, alkaa "7656119"
-- Direction: "UP" tai "DOWN"
-- ReasonCategoryId: Olemassa oleva aktiivinen kategoria
+### Validations
+- Steam64 ID: 17 digits, starts with "7656119"
+- Direction: "UP" or "DOWN"
+- ReasonCategoryId: Existing active category
 
-### Anonymiteetti
-- Peruskäyttäjä ei näe kuka äänesti ketä
-- Admin näkee audit-logista (myöhempi ominaisuus)
+### Anonymity
+- Regular users cannot see who voted for whom
+- Admin can see audit log (future feature)
 
 ---
 
-## 🚀 Kehitysvaiheet
+## 🚀 Development Phases
 
-### ✅ Vaihe 1: Pohja (VALMIS)
-- [x] Projektin kansiorakenne
-- [x] Package.json ja riippuvuudet
-- [x] TypeScript-konfiguraatio
-- [x] Prisma-skeema
-- [x] Perus Fastify-sovellus
-- [x] Redis-apufunktiot (cooldown, rate limit)
-- [x] Error-luokat
-- [x] Frontend-pohja (React + Vite + Tailwind)
+### ✅ Phase 1: Foundation (COMPLETE)
+- [x] Project folder structure
+- [x] Package.json and dependencies
+- [x] TypeScript configuration
+- [x] Prisma schema
+- [x] Basic Fastify application
+- [x] Redis helper functions (cooldown, rate limit)
+- [x] Error classes
+- [x] Frontend base (React + Vite + Tailwind)
 
-### 🔄 Vaihe 2: Autentikointi (SEURAAVA)
-- [ ] Steam OpenID -integraatio
-- [ ] Session-hallinta (Redis)
+### 🔄 Phase 2: Authentication (NEXT)
+- [ ] Steam OpenID integration
+- [ ] Session management (Redis)
 - [ ] Auth middleware
-- [ ] /auth/* routet
+- [ ] /auth/* routes
 
-### ⏳ Vaihe 3: Serverit ja pelaajat
+### ⏳ Phase 3: Servers and Players
 - [ ] Servers CRUD
-- [ ] Players haku/luonti
-- [ ] Seed-data servereille
+- [ ] Players search/creation
+- [ ] Seed data for servers
 
-### ⏳ Vaihe 4: Äänestyslogiikka
-- [ ] Vote-endpoint
-- [ ] Cooldown-logiikka
+### ⏳ Phase 4: Voting Logic
+- [ ] Vote endpoint
+- [ ] Cooldown logic
 - [ ] Rate limiting
-- [ ] Validoinnit
+- [ ] Validations
 
-### ⏳ Vaihe 5: Reputaatio
-- [ ] Aggregaatiot (up/down count)
-- [ ] Top-kategoriat
-- [ ] Aikasarjadata
-- [ ] Serverikohtainen breakdown
+### ⏳ Phase 5: Reputation
+- [ ] Aggregations (up/down count)
+- [ ] Top categories
+- [ ] Time series data
+- [ ] Server-specific breakdown
 
-### ⏳ Vaihe 6: Polish
+### ⏳ Phase 6: Polish
 - [ ] Error handling
 - [ ] Loading states
-- [ ] Toast-notifikaatiot
+- [ ] Toast notifications
 - [ ] Mobile responsive
 
-### ⏳ Tulevaisuus (v2+)
-- [ ] Admin-paneeli
-- [ ] RCON-integraatio (live-pelaajalista)
-- [ ] WebSocket (reaaliaikaiset päivitykset)
-- [ ] Audit-logit
+### ⏳ Future (v2+)
+- [ ] Admin panel
+- [ ] RCON integration (live player list)
+- [ ] WebSocket (real-time updates)
+- [ ] Audit logs
 
 ---
 
-## 🛠️ Kehityskomennot
+## 🛠️ Development Commands
 
 ### Backend
 ```bash
 cd SquadKarma
-npm install              # Asenna riippuvuudet
-npm run dev              # Käynnistä dev-serveri
-npm run db:push          # Synkronoi schema tietokantaan
-npm run db:seed          # Lisää seed-data
-npm run db:studio        # Avaa Prisma Studio
+npm install              # Install dependencies
+npm run dev              # Start dev server
+npm run db:push          # Sync schema to database
+npm run db:seed          # Add seed data
+npm run db:studio        # Open Prisma Studio
 ```
 
 ### Frontend
 ```bash
 cd SquadKarma/frontend
-npm install              # Asenna riippuvuudet
-npm run dev              # Käynnistä Vite dev-serveri
-npm run build            # Tuotantobuildi
+npm install              # Install dependencies
+npm run dev              # Start Vite dev server
+npm run build            # Production build
 ```
 
-### Tietokannat (Docker)
+### Databases (Docker)
 ```bash
 # PostgreSQL
 docker run -d --name squad-postgres \
@@ -298,55 +298,55 @@ docker run -d --name squad-redis \
 
 ---
 
-## 📝 Koodauskäytännöt
+## 📝 Coding Conventions
 
 ### TypeScript
-- Strict mode aina päällä
-- Ei `any`-tyyppejä (paitsi väliaikaisesti)
-- Interface nimiin ei `I`-prefiksiä
-- Enumit SCREAMING_SNAKE_CASE
+- Strict mode always enabled
+- No `any` types (except temporarily)
+- No `I` prefix for interface names
+- Enums in SCREAMING_SNAKE_CASE
 
 ### React
-- Funktionaaliset komponentit
-- Custom hookit `use`-prefiksillä
-- Props-interfacet komponentin yhteydessä
-- Lazy loading isoille sivuille
+- Functional components
+- Custom hooks with `use` prefix
+- Props interfaces alongside component
+- Lazy loading for large pages
 
 ### Backend
-- Modulaarinen rakenne (auth, users, votes...)
-- Service-kerros business-logiikalle
-- Route-kerros HTTP-käsittelylle
-- Zod validointiin
+- Modular structure (auth, users, votes...)
+- Service layer for business logic
+- Route layer for HTTP handling
+- Zod for validation
 
 ### Git
 - Conventional Commits (feat:, fix:, docs:...)
-- Feature branchit
-- PR:t ennen mergea mainiin
+- Feature branches
+- PRs before merging to main
 
 ---
 
-## ⚠️ Huomioitavaa
+## ⚠️ Important Notes
 
-### Turvallisuus
-- Älä tallenna Steam API -avainta repoon
-- Session secret vähintään 32 merkkiä
-- Rate limiting estää spam-hyökkäykset
-- Input-validointi kaikille endpointeille
+### Security
+- Never store Steam API key in repo
+- Session secret minimum 32 characters
+- Rate limiting prevents spam attacks
+- Input validation for all endpoints
 
-### Suorituskyky
-- Redis cooldown-tarkistuksiin (ei DB-kyselyitä)
-- Indeksit tietokannassa (steam64, createdAt)
-- Aggregaatiot voi cachettaa myöhemmin
+### Performance
+- Redis for cooldown checks (no DB queries)
+- Database indexes (steam64, createdAt)
+- Aggregations can be cached later
 
-### Käyttäjäkokemus
-- Selkeät virheilmoitukset
-- Loading-tilat kaikille async-operaatioille
+### User Experience
+- Clear error messages
+- Loading states for all async operations
 - Mobile-first responsive design
-- Tumma teema (Squad-henkinen)
+- Dark theme (Squad-inspired)
 
 ---
 
-## 🔗 Hyödyllisiä linkkejä
+## 🔗 Useful Links
 
 - [Steam Web API](https://steamcommunity.com/dev)
 - [Fastify Docs](https://fastify.dev/docs/latest/)
@@ -356,20 +356,20 @@ docker run -d --name squad-redis \
 
 ---
 
-## 📚 Context7 -yhteensopivuus
+## 📚 Context7 Compatibility
 
-Koodi on tarkistettu ja päivitetty Context7-dokumentaation mukaiseksi:
+Code has been verified and updated according to Context7 documentation:
 
-| Kirjasto | Versio | Huomiot |
-|----------|--------|---------|
-| **Fastify** | 4.x | Perusrakenne dokumentaation mukainen |
-| **Prisma** | 6.x | Käyttää `@prisma/adapter-pg` adapteria (Context7 suositus) |
+| Library | Version | Notes |
+|---------|---------|-------|
+| **Fastify** | 4.x | Basic structure follows documentation |
+| **Prisma** | 6.x | Uses `@prisma/adapter-pg` adapter (Context7 recommendation) |
 | **ioredis** | 5.x | Import: `import Redis from 'ioredis'` |
-| **@fastify/passport** | 3.x | Authenticator-luokka + secureSession |
-| **@fastify/cors** | 9.x | Rekisteröinti dokumentaation mukainen |
-| **Zod** | 3.x | Ympäristömuuttujien validointi |
+| **@fastify/passport** | 3.x | Authenticator class + secureSession |
+| **@fastify/cors** | 9.x | Registration follows documentation |
+| **Zod** | 3.x | Environment variable validation |
 
-### Prisma-adapterin käyttö
+### Prisma Adapter Usage
 ```typescript
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -378,7 +378,7 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 ```
 
-### @fastify/passport -käyttö
+### @fastify/passport Usage
 ```typescript
 import { Authenticator } from '@fastify/passport';
 
@@ -389,4 +389,4 @@ app.register(fastifyPassport.secureSession());
 
 ---
 
-*Päivitetty: Context7-tarkistus suoritettu*
+*Updated: Context7 verification completed*
