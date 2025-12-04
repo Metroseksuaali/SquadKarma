@@ -13,7 +13,11 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio"
   },
-  "keywords": ["squad", "reputation", "gaming"],
+  "keywords": [
+    "squad",
+    "reputation",
+    "gaming"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -25,6 +29,7 @@
     "@prisma/client": "^6.0.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
+    "fastify-session-redis-store": "^7.1.2",
     "ioredis": "^5.4.1",
     "node-steam-openid": "^1.0.3",
     "pg": "^8.13.0",
