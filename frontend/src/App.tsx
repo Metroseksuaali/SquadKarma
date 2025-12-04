@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
-import { Layout } from '@components/layout/Layout'
+import { Layout } from '@/components/layout'
 import { HomePage } from '@pages/HomePage'
 import { ServersPage } from '@pages/ServersPage'
 import { PlayerPage } from '@pages/PlayerPage'

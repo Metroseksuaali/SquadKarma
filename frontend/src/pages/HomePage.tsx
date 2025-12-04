@@ -3,10 +3,11 @@
 
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { ThumbsUp, ThumbsDown, Shield, Users } from 'lucide-react';
+import { SteamLoginButton } from '@/components/features/auth';
+import { ThumbsUp, Shield, Users } from 'lucide-react';
 
 export function HomePage() {
-  const { isLoggedIn, login } = useAuth();
+  const { isLoggedIn } = useAuth();
 
   return (
     <div className="space-y-16">
@@ -26,9 +27,7 @@ export function HomePage() {
             Browse Servers
           </Link>
         ) : (
-          <button onClick={login} className="btn btn-primary text-lg px-8 py-3">
-            Sign in with Steam
-          </button>
+          <SteamLoginButton size="lg" />
         )}
       </section>
 

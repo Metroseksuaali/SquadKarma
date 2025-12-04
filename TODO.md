@@ -40,11 +40,11 @@
 - [x] Serialize/deserialize user for session
 
 ### Frontend Tasks
-- [ ] Steam login button component
-- [ ] Auth context/hook for user state
-- [ ] Protected route wrapper
-- [ ] User avatar display in header
-- [ ] Logout functionality
+- [x] Steam login button component
+- [x] Auth context/hook for user state
+- [x] Protected route wrapper
+- [x] User avatar display in header
+- [x] Logout functionality
 
 ### Testing
 - [ ] Test login flow manually
