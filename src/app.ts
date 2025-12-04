@@ -1,16 +1,12 @@
 // src/app.ts
 // Fastify application setup
-// Updated to follow Context7 documentation for @fastify/passport
 
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
-import { Authenticator } from '@fastify/passport';
 import { AppError } from './utils/errors.js';
-
-// Create passport authenticator instance
-export const fastifyPassport = new Authenticator();
+import { createSessionStore } from './db/session-store.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -31,19 +27,23 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Cookies (required for sessions)
   await app.register(cookie);
 
-  // Session (required for passport)
+  // Create Redis session store
+  const sessionStore = createSessionStore({
+    prefix: 'squadkarma:sess:',
+    ttl: 60 * 60 * 24 * 7, // 7 days
+  });
+
+  // Session with Redis store
   await app.register(session, {
     secret: process.env.SESSION_SECRET || 'change-this-secret-min-32-chars!',
+    store: sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: 'lax',
     },
   });
-
-  // Initialize passport and session storage
-  await app.register(fastifyPassport.initialize());
-  await app.register(fastifyPassport.secureSession());
 
   // Health check
   app.get('/health', async () => {

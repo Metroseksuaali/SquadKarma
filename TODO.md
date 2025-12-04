@@ -35,7 +35,7 @@
   - [ ] GET `/auth/steam/callback` - Handle Steam response
   - [ ] GET `/auth/me` - Return current user
   - [ ] POST `/auth/logout` - Clear session
-- [ ] Session storage in Redis
+- [x] Session storage in Redis
 - [ ] User creation/update on successful login
 - [ ] Serialize/deserialize user for session
 
