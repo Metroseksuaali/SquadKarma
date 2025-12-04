@@ -14,17 +14,25 @@
 
 ### Git Workflow
 ```bash
-# Make sure you're on dev branch
+# Always create a feature branch from dev
 git checkout dev
-
-# Pull latest changes
 git pull origin dev
+git checkout -b feature/your-feature-name
 
-# Commit changes
+# Make changes and commit
 git add .
 git commit -m "feat: description"
-git push origin dev
+git push origin feature/your-feature-name
+
+# Then create a Pull Request to dev branch on GitHub
+# NEVER push directly to dev or main
 ```
+
+### Branch Naming
+- `feature/` - New features (e.g., `feature/steam-auth`)
+- `fix/` - Bug fixes (e.g., `fix/cooldown-logic`)
+- `docs/` - Documentation (e.g., `docs/api-readme`)
+- `refactor/` - Code refactoring
 
 ---
 
