@@ -4,15 +4,29 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
 
-// Extend FastifyRequest to include user
+// Extend FastifyRequest to include user from session
 declare module 'fastify' {
   interface FastifyRequest {
     user?: {
       id: string;
       steam64: string;
       displayName: string;
+      avatarUrl: string | null;
       isBanned: boolean;
     };
+  }
+}
+
+/**
+ * Middleware to set user from session
+ * Call this as a preHandler to populate request.user
+ */
+export async function populateUser(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  if (request.session?.user) {
+    request.user = request.session.user;
   }
 }
 
@@ -23,6 +37,11 @@ export async function requireAuth(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
+  // First populate user from session
+  if (request.session?.user) {
+    request.user = request.session.user;
+  }
+  
   if (!request.user) {
     throw new UnauthorizedError('You must be logged in');
   }
@@ -39,6 +58,8 @@ export async function optionalAuth(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
-  // User will be set by session plugin if logged in
-  // This middleware just allows the request to continue
+  // Populate user from session if available
+  if (request.session?.user) {
+    request.user = request.session.user;
+  }
 }

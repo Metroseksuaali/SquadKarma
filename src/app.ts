@@ -7,6 +7,7 @@ import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import { AppError } from './utils/errors.js';
 import { createSessionStore } from './db/session-store.js';
+import { authRoutes } from './modules/auth/index.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -91,8 +92,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     });
   });
 
-  // TODO: Register route modules here
-  // await app.register(authRoutes, { prefix: '/auth' });
+  // Register route modules
+  await app.register(authRoutes, { prefix: '/auth' });
+  // TODO: Enable these as implemented
   // await app.register(serverRoutes, { prefix: '/api/servers' });
   // await app.register(playerRoutes, { prefix: '/api/players' });
   // await app.register(voteRoutes, { prefix: '/api/votes' });
