@@ -1,16 +1,12 @@
 // src/app.ts
 // Fastify application setup
-// Updated to follow Context7 documentation for @fastify/passport
 
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
-import { Authenticator } from '@fastify/passport';
 import { AppError } from './utils/errors.js';
-
-// Create passport authenticator instance
-export const fastifyPassport = new Authenticator();
+import { authRoutes } from './modules/auth/index.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -31,19 +27,16 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Cookies (required for sessions)
   await app.register(cookie);
 
-  // Session (required for passport)
+  // Session configuration
   await app.register(session, {
     secret: process.env.SESSION_SECRET || 'change-this-secret-min-32-chars!',
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: 'lax',
     },
   });
-
-  // Initialize passport and session storage
-  await app.register(fastifyPassport.initialize());
-  await app.register(fastifyPassport.secureSession());
 
   // Health check
   app.get('/health', async () => {
@@ -91,8 +84,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     });
   });
 
-  // TODO: Register route modules here
-  // await app.register(authRoutes, { prefix: '/auth' });
+  // Register route modules
+  await app.register(authRoutes, { prefix: '/auth' });
+  // TODO: Enable these as implemented
   // await app.register(serverRoutes, { prefix: '/api/servers' });
   // await app.register(playerRoutes, { prefix: '/api/players' });
   // await app.register(voteRoutes, { prefix: '/api/votes' });

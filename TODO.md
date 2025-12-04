@@ -28,16 +28,16 @@
 ## Phase 2: Authentication 🔄 IN PROGRESS
 
 ### Backend Tasks
-- [ ] Create `src/modules/auth/` folder structure
-- [ ] Implement Steam OpenID strategy with node-steam-openid
-- [ ] Create auth routes:
-  - [ ] GET `/auth/steam` - Redirect to Steam login
-  - [ ] GET `/auth/steam/callback` - Handle Steam response
-  - [ ] GET `/auth/me` - Return current user
-  - [ ] POST `/auth/logout` - Clear session
+- [x] Create `src/modules/auth/` folder structure
+- [x] Implement Steam OpenID strategy with node-steam-openid
+- [x] Create auth routes:
+  - [x] GET `/auth/steam` - Redirect to Steam login
+  - [x] GET `/auth/steam/callback` - Handle Steam response
+  - [x] GET `/auth/me` - Return current user
+  - [x] POST `/auth/logout` - Clear session
 - [ ] Session storage in Redis
-- [ ] User creation/update on successful login
-- [ ] Serialize/deserialize user for session
+- [x] User creation/update on successful login
+- [x] Serialize/deserialize user for session
 
 ### Frontend Tasks
 - [ ] Steam login button component
