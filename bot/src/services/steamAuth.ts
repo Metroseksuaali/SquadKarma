@@ -1,24 +1,14 @@
 import openid from 'openid';
 import type { OpenIdError } from 'openid';
+import crypto from 'crypto';
 import { config } from '../config/env.js';
 import { prisma } from '../db/client.js';
 
 /**
- * Steam OpenID Relying Party
- */
-const relyingParty = new openid.RelyingParty(
-  config.steam.callbackUrl,
-  config.steam.callbackUrl.replace('/auth/steam/callback', ''),
-  true, // Use stateless verification
-  false, // Don't use associations
-  []
-);
-
-/**
  * Pending authentication sessions
- * Maps Discord user ID to verification URL
+ * Maps state token to Discord user ID
  */
-const pendingAuth = new Map<string, { url: string, timestamp: number }>();
+const pendingAuth = new Map<string, { discordId: string, timestamp: number }>();
 
 /**
  * Steam ID regex pattern
@@ -26,9 +16,24 @@ const pendingAuth = new Map<string, { url: string, timestamp: number }>();
 const STEAM_ID_PATTERN = /^https?:\/\/steamcommunity\.com\/openid\/id\/(\d+)$/;
 
 /**
- * Generate Steam OpenID authentication URL
+ * Generate Steam OpenID authentication URL with state token
  */
-export async function generateSteamAuthUrl(discordId: string): Promise<string> {
+export async function generateSteamAuthUrl(discordId: string): Promise<{ authUrl: string, state: string }> {
+  // Generate state token for CSRF protection
+  const state = crypto.randomBytes(32).toString('hex');
+
+  // Create callback URL with state parameter
+  const callbackUrlWithState = `${config.steam.callbackUrl}?state=${state}`;
+
+  // Create a relying party instance with the state-included callback
+  const relyingParty = new openid.RelyingParty(
+    callbackUrlWithState,
+    config.steam.callbackUrl.replace('/auth/steam/callback', ''),
+    true, // Use stateless verification
+    false, // Don't use associations
+    []
+  );
+
   return new Promise((resolve, reject) => {
     relyingParty.authenticate(
       'https://steamcommunity.com/openid',
@@ -44,9 +49,9 @@ export async function generateSteamAuthUrl(discordId: string): Promise<string> {
           return;
         }
 
-        // Store pending authentication
-        pendingAuth.set(discordId, {
-          url: authUrl,
+        // Store pending authentication with state token
+        pendingAuth.set(state, {
+          discordId,
           timestamp: Date.now(),
         });
 
@@ -58,7 +63,7 @@ export async function generateSteamAuthUrl(discordId: string): Promise<string> {
           }
         }
 
-        resolve(authUrl);
+        resolve({ authUrl, state });
       }
     );
   });
@@ -68,6 +73,18 @@ export async function generateSteamAuthUrl(discordId: string): Promise<string> {
  * Verify Steam OpenID callback
  */
 export async function verifySteamCallback(requestUrl: string): Promise<string | null> {
+  // Create a relying party for verification
+  // We use the base callback URL without query params for verification
+  const baseCallbackUrl = config.steam.callbackUrl.split('?')[0] || config.steam.callbackUrl;
+  const realm = baseCallbackUrl.replace('/auth/steam/callback', '');
+  const relyingParty = new openid.RelyingParty(
+    baseCallbackUrl,
+    realm,
+    true,
+    false,
+    []
+  );
+
   return new Promise((resolve) => {
     relyingParty.verifyAssertion(requestUrl, (error: OpenIdError | null, result?: { authenticated: boolean; claimedIdentifier?: string }) => {
       if (error || !result || !result.authenticated) {
@@ -158,12 +175,24 @@ export async function getUserLink(discordId: string) {
 }
 
 /**
- * Check if a pending auth exists and is still valid
+ * Get Discord ID from state token
  */
-export function hasPendingAuth(discordId: string): boolean {
-  const pending = pendingAuth.get(discordId);
-  if (!pending) return false;
+export function getDiscordIdFromState(state: string): string | null {
+  const pending = pendingAuth.get(state);
+  if (!pending) return null;
 
   const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
-  return pending.timestamp >= tenMinutesAgo;
+  if (pending.timestamp < tenMinutesAgo) {
+    pendingAuth.delete(state);
+    return null;
+  }
+
+  return pending.discordId;
+}
+
+/**
+ * Clean up pending auth after successful link
+ */
+export function cleanupPendingAuth(state: string): void {
+  pendingAuth.delete(state);
 }

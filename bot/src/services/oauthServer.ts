@@ -1,12 +1,6 @@
 import Fastify from 'fastify';
 import { config } from '../config/env.js';
-import { verifySteamCallback, linkDiscordToSteam } from './steamAuth.js';
-
-/**
- * Pending link requests
- * Maps state token to Discord user ID
- */
-const pendingLinks = new Map<string, { discordId: string, timestamp: number }>();
+import { verifySteamCallback, linkDiscordToSteam, getDiscordIdFromState, cleanupPendingAuth } from './steamAuth.js';
 
 /**
  * Create OAuth callback server
@@ -22,9 +16,66 @@ export async function createOAuthServer() {
    * Steam OAuth callback endpoint
    */
   fastify.get('/auth/steam/callback', async (request, reply) => {
-    const fullUrl = `${config.steam.callbackUrl}${request.url}`;
+    // Build full URL correctly: use protocol + host + path + query
+    const protocol = request.headers['x-forwarded-proto'] || 'http';
+    const host = request.headers['x-forwarded-host'] || request.headers.host || `localhost:${config.oauth.port}`;
+    const fullUrl = `${protocol}://${host}${request.url}`;
 
     try {
+      // Extract state from query parameters
+      const state = (request.query as Record<string, string>)['state'];
+
+      if (!state) {
+        return reply.type('text/html').send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Invalid Request</title>
+              <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+                .container { background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                h1 { color: #e74c3c; }
+                p { color: #666; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>❌ Invalid Request</h1>
+                <p>Missing state parameter. Please use the /link command in Discord.</p>
+                <p>You can close this window.</p>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+
+      // Get Discord ID from state token
+      const discordId = getDiscordIdFromState(state);
+
+      if (!discordId) {
+        return reply.type('text/html').send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Session Expired</title>
+              <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+                .container { background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                h1 { color: #f39c12; }
+                p { color: #666; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>⏱️ Session Expired</h1>
+                <p>Your authentication session has expired. Please use the /link command in Discord again.</p>
+                <p>You can close this window.</p>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+
       // Verify the Steam OpenID callback
       const steam64 = await verifySteamCallback(fullUrl);
 
@@ -52,64 +103,11 @@ export async function createOAuthServer() {
         `);
       }
 
-      // Extract state from query parameters to find Discord user
-      const state = (request.query as Record<string, string>)['openid.state'];
-
-      if (!state) {
-        return reply.type('text/html').send(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Invalid Request</title>
-              <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-                .container { background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                h1 { color: #e74c3c; }
-                p { color: #666; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <h1>❌ Invalid Request</h1>
-                <p>Missing state parameter. Please use the /link command in Discord.</p>
-                <p>You can close this window.</p>
-              </div>
-            </body>
-          </html>
-        `);
-      }
-
-      const pending = pendingLinks.get(state);
-
-      if (!pending) {
-        return reply.type('text/html').send(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Session Expired</title>
-              <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-                .container { background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                h1 { color: #f39c12; }
-                p { color: #666; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <h1>⏱️ Session Expired</h1>
-                <p>Your authentication session has expired. Please use the /link command in Discord again.</p>
-                <p>You can close this window.</p>
-              </div>
-            </body>
-          </html>
-        `);
-      }
-
       // Link the accounts
-      await linkDiscordToSteam(pending.discordId, steam64);
+      await linkDiscordToSteam(discordId, steam64);
 
       // Clean up
-      pendingLinks.delete(state);
+      cleanupPendingAuth(state);
 
       return reply.type('text/html').send(`
         <!DOCTYPE html>
@@ -194,22 +192,4 @@ export async function startOAuthServer() {
   }
 
   return server;
-}
-
-/**
- * Register a pending link request
- */
-export function registerPendingLink(state: string, discordId: string): void {
-  pendingLinks.set(state, {
-    discordId,
-    timestamp: Date.now(),
-  });
-
-  // Clean up old pending links (older than 10 minutes)
-  const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
-  for (const [key, value] of pendingLinks.entries()) {
-    if (value.timestamp < tenMinutesAgo) {
-      pendingLinks.delete(key);
-    }
-  }
 }

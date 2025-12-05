@@ -1,7 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { generateSteamAuthUrl, getUserLink } from '../services/steamAuth.js';
-import { registerPendingLink } from '../services/oauthServer.js';
-import crypto from 'crypto';
 
 export const data = new SlashCommandBuilder()
   .setName('link')
@@ -34,15 +32,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    // Generate authentication URL
-    const authUrl = await generateSteamAuthUrl(interaction.user.id);
-
-    // Generate state token for callback
-    const state = crypto.randomBytes(32).toString('hex');
-    const authUrlWithState = `${authUrl}&openid.state=${state}`;
-
-    // Register pending link
-    registerPendingLink(state, interaction.user.id);
+    // Generate authentication URL with state token
+    const { authUrl } = await generateSteamAuthUrl(interaction.user.id);
 
     // Send DM with authentication link
     try {
@@ -62,7 +53,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         })
         .addFields({
           name: '🔗 Authentication Link',
-          value: `[Click here to authenticate with Steam](${authUrlWithState})`,
+          value: `[Click here to authenticate with Steam](${authUrl})`,
           inline: false,
         })
         .setFooter({ text: 'Squad Karma - Steam Authentication' })
@@ -106,7 +97,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         })
         .addFields({
           name: '🔗 Authentication Link',
-          value: `[Click here to authenticate with Steam](${authUrlWithState})`,
+          value: `[Click here to authenticate with Steam](${authUrl})`,
           inline: false,
         })
         .setFooter({ text: 'Enable DMs from server members to receive links privately' })
