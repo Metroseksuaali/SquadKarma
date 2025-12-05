@@ -15,6 +15,14 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
+  // Steam OAuth
+  STEAM_CALLBACK_URL: z.string().url('STEAM_CALLBACK_URL must be a valid URL'),
+  OAUTH_PORT: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(1).max(65535)).optional().default('3001'),
+  OAUTH_HOST: z.string().optional().default('0.0.0.0'),
+
+  // Encryption
+  ENCRYPTION_KEY: z.string().min(32, 'ENCRYPTION_KEY must be at least 32 characters').optional().default('squad-karma-bot-encryption-key-change-in-production!!'),
+
   // Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('development'),
 });
@@ -49,6 +57,16 @@ export const config = {
   },
   database: {
     url: env.DATABASE_URL,
+  },
+  steam: {
+    callbackUrl: env.STEAM_CALLBACK_URL,
+  },
+  oauth: {
+    port: env.OAUTH_PORT,
+    host: env.OAUTH_HOST,
+  },
+  encryption: {
+    key: env.ENCRYPTION_KEY,
   },
   env: env.NODE_ENV,
   isDevelopment: env.NODE_ENV === 'development',
