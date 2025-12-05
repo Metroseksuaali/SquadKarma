@@ -61,14 +61,13 @@ export async function registerReplicationRoutes(fastify: FastifyInstance) {
         const trustedNode = await prisma.trustedNode.findUnique({
           where: {
             nodeId: body.sourceNodeId,
-            isActive: true,
           },
         });
 
-        if (!trustedNode) {
+        if (!trustedNode || !trustedNode.isActive) {
           return reply.code(403).send({
             error: 'Forbidden',
-            message: 'Source node is not in trusted nodes list',
+            message: 'Source node is not in trusted nodes list or is inactive',
           });
         }
 
@@ -107,19 +106,24 @@ export async function registerReplicationRoutes(fastify: FastifyInstance) {
 
             // Get or create session records for the replicated vote
             // Note: We create placeholder sessions since we don't have full session data
+            // We look up by steam64 + serverId + timestamp proximity instead of remote ID
+            // Reuse the timestamp variables from above
+
             let voterSession = await prisma.session.findFirst({
               where: {
                 steam64: vote.voterSteam64,
                 serverId: vote.sourceNodeId,
-                id: vote.voterSessionId,
+                joinedAt: {
+                  gte: oneHourBefore,
+                  lte: oneHourAfter,
+                },
               },
             });
 
             if (!voterSession) {
-              // Create placeholder session
+              // Create placeholder session with new local ID
               voterSession = await prisma.session.create({
                 data: {
-                  id: vote.voterSessionId,
                   steam64: vote.voterSteam64,
                   playerName: `Player-${vote.voterSteam64.substring(0, 8)}`,
                   serverId: vote.sourceNodeId,
@@ -133,15 +137,17 @@ export async function registerReplicationRoutes(fastify: FastifyInstance) {
               where: {
                 steam64: vote.targetSteam64,
                 serverId: vote.sourceNodeId,
-                id: vote.targetSessionId,
+                joinedAt: {
+                  gte: oneHourBefore,
+                  lte: oneHourAfter,
+                },
               },
             });
 
             if (!targetSession) {
-              // Create placeholder session
+              // Create placeholder session with new local ID
               targetSession = await prisma.session.create({
                 data: {
-                  id: vote.targetSessionId,
                   steam64: vote.targetSteam64,
                   playerName: `Player-${vote.targetSteam64.substring(0, 8)}`,
                   serverId: vote.sourceNodeId,
