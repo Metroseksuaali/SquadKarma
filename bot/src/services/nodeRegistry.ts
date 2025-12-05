@@ -94,6 +94,15 @@ export async function getNodeByGuild(guildId: string) {
 }
 
 /**
+ * Get node for a guild (without decrypting API key)
+ */
+export async function getNodeForGuild(guildId: string) {
+  return prisma.nodeRegistry.findUnique({
+    where: { guildId },
+  });
+}
+
+/**
  * Deactivate a node registration
  */
 export async function deactivateNode(guildId: string): Promise<void> {
@@ -102,6 +111,16 @@ export async function deactivateNode(guildId: string): Promise<void> {
     data: { isActive: false },
   });
   console.log(`🔴 Deactivated node for guild ${guildId}`);
+}
+
+/**
+ * Unregister (delete) a node registration
+ */
+export async function unregisterNode(guildId: string): Promise<void> {
+  await prisma.nodeRegistry.delete({
+    where: { guildId },
+  });
+  console.log(`🗑️ Unregistered node for guild ${guildId}`);
 }
 
 /**

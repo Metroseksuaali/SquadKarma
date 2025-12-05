@@ -14,11 +14,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         name: '👥 Player Commands',
         value: [
           '`/help` - Show this help message',
-          '`/link <steam_profile>` - Link your Discord to Steam account',
+          '`/link` - Link your Discord to Steam account',
           '`/whoami` - Check your linked Steam account',
-          '`/session` - Check your current Squad session',
-          '`/rep <steam64>` - Check player reputation',
-          '`/vote @user <up|down> <reason>` - Vote for a player (requires proof of presence)',
+          '`/unlink` - Remove your Steam account link',
+          '`/session [steam64]` - Check your current Squad session',
         ].join('\n'),
         inline: false,
       },
@@ -32,20 +31,19 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         inline: false,
       },
       {
-        name: '🔒 Proof of Presence',
-        value: 'Votes are only valid if both players were on the server together for ≥5 minutes within the last 24 hours.',
-        inline: false,
-      },
-      {
         name: '📊 How It Works',
         value: [
           '1. Server admins run a **node** that tracks player sessions',
           '2. Admins register their node with this bot using `/register-node`',
           '3. Players link their Discord to Steam using `/link`',
-          '4. Players vote for others they played with using `/vote`',
-          '5. Bot validates votes against the node\'s session data',
-          '6. Reputation is aggregated across all registered nodes',
+          '4. Players can check their sessions using `/session`',
+          '5. Bot queries the node for session and player data',
         ].join('\n'),
+        inline: false,
+      },
+      {
+        name: '🚧 Coming Soon',
+        value: 'Voting system with proof of presence validation (Phase 4)',
         inline: false,
       },
       {

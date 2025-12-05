@@ -10,8 +10,11 @@ import { checkDatabaseConnection, disconnectDatabase } from './db/client.js';
 import { createDiscordClient, registerCommands } from './discord/client.js';
 import { loadCommands } from './discord/commandLoader.js';
 import { healthCheckAllNodes } from './services/nodeRegistry.js';
+import { startOAuthServer } from './services/oauthServer.js';
+import type { FastifyInstance } from 'fastify';
 
 let client: ReturnType<typeof createDiscordClient> | null = null;
+let oauthServer: FastifyInstance | null = null;
 
 /**
  * Main bot startup
@@ -72,7 +75,12 @@ async function main() {
 
     console.log('✅ Discord bot started successfully\n');
 
-    // 6. Start periodic health checks (every 5 minutes)
+    // 6. Start OAuth server for Steam linking
+    console.log('🌐 Starting OAuth server...');
+    oauthServer = await startOAuthServer();
+    console.log('✅ OAuth server started successfully\n');
+
+    // 7. Start periodic health checks (every 5 minutes)
     setInterval(async () => {
       await healthCheckAllNodes();
     }, 5 * 60 * 1000);
@@ -96,6 +104,9 @@ async function cleanup() {
   try {
     if (client) {
       client.destroy();
+    }
+    if (oauthServer) {
+      await oauthServer.close();
     }
     await disconnectDatabase();
   } catch (error) {
