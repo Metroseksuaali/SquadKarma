@@ -4,6 +4,7 @@ import { config } from '../config/env.js';
 import { registerStatsRoutes } from './routes/stats.js';
 import { registerSessionRoutes } from './routes/session.js';
 import { registerReputationRoutes } from './routes/reputation.js';
+import { registerReplicationRoutes } from './routes/replication.js';
 
 /**
  * Create and configure Fastify server
@@ -34,6 +35,7 @@ export async function createServer() {
   await registerStatsRoutes(fastify);
   await registerSessionRoutes(fastify);
   await registerReputationRoutes(fastify);
+  await registerReplicationRoutes(fastify);
 
   return fastify;
 }
