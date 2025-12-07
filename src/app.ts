@@ -14,7 +14,7 @@ import { serverRoutes } from './modules/servers/index.js';
 import { playerRoutes } from './modules/players/index.js';
 import { voteRoutes, reasonCategoryRoutes } from './modules/votes/index.js';
 
-export async function buildApp(): Promise<FastifyInstance> {
+export async function buildApp() {
   const app = Fastify({
     logger: logger,
   });

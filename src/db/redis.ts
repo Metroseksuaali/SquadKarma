@@ -37,3 +37,22 @@ export async function setCooldown(
   const key = `cooldown:${voterSteam64}:${targetSteam64}`;
   await redis.set(key, '1', 'EX', seconds);
 }
+
+// Rate limiting helper for preventing vote spam
+export async function checkRateLimit(
+  steam64: string, 
+  maxVotes: number = 10, 
+  windowSeconds: number = 600
+): Promise<{ allowed: boolean; remaining: number }> {
+  const key = `ratelimit:${steam64}`;
+  const current = await redis.incr(key);
+  
+  if (current === 1) {
+    await redis.expire(key, windowSeconds);
+  }
+  
+  return {
+    allowed: current <= maxVotes,
+    remaining: Math.max(0, maxVotes - current),
+  };
+}
