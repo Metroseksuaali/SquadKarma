@@ -9,6 +9,7 @@ import RedisStore from 'fastify-session-redis-store';
 import { AppError } from './utils/errors.js';
 import { redis } from './db/redis.js';
 import { logger } from './utils/logger.js';
+import { env } from './config/env.js';
 import { authRoutes } from './modules/auth/index.js';
 import { serverRoutes } from './modules/servers/index.js';
 import { playerRoutes } from './modules/players/index.js';
@@ -21,7 +22,7 @@ export async function buildApp() {
 
   // CORS
   await app.register(cors, {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: env.FRONTEND_URL,
     credentials: true,
   });
 
@@ -37,10 +38,10 @@ export async function buildApp() {
 
   // Session with Redis store
   await app.register(session, {
-    secret: process.env.SESSION_SECRET || 'change-this-secret-min-32-chars!',
+    secret: env.SESSION_SECRET,
     store: redisStore,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.NODE_ENV === 'production',
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days in milliseconds
       sameSite: 'lax',
@@ -87,7 +88,7 @@ export async function buildApp() {
     // Unknown errors
     return reply.status(500).send({
       error: 'INTERNAL_ERROR',
-      message: process.env.NODE_ENV === 'development' 
+      message: env.NODE_ENV === 'development' 
         ? error.message 
         : 'An unexpected error occurred',
     });
