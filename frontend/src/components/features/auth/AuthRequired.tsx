@@ -1,7 +1,7 @@
 // src/components/features/auth/AuthRequired.tsx
 // Component for displaying auth-required content with fallback UI
 
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { SteamLoginButton } from './SteamLoginButton';
 
 interface AuthRequiredProps {

@@ -8,19 +8,15 @@ import session from '@fastify/session';
 import RedisStore from 'fastify-session-redis-store';
 import { AppError } from './utils/errors.js';
 import { redis } from './db/redis.js';
+import { logger } from './utils/logger.js';
 import { authRoutes } from './modules/auth/index.js';
 import { serverRoutes } from './modules/servers/index.js';
 import { playerRoutes } from './modules/players/index.js';
 import { voteRoutes, reasonCategoryRoutes } from './modules/votes/index.js';
 
-export async function buildApp(): Promise<FastifyInstance> {
+export async function buildApp() {
   const app = Fastify({
-    logger: {
-      level: process.env.NODE_ENV === 'development' ? 'info' : 'warn',
-      transport: process.env.NODE_ENV === 'development'
-        ? { target: 'pino-pretty', options: { colorize: true } }
-        : undefined,
-    },
+    logger: logger,
   });
 
   // CORS

@@ -1,7 +1,7 @@
 // src/components/features/auth/UserMenu.tsx
 import { useState, useRef, useEffect } from 'react';
 import { Avatar, Button } from '@/components/ui';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 
 export function UserMenu() {
   const { user, logout, isLoading } = useAuth();

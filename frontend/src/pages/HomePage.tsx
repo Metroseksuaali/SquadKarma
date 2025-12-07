@@ -2,7 +2,7 @@
 // Landing page
 
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { SteamLoginButton } from '@/components/features/auth';
 import { ThumbsUp, Shield, Users } from 'lucide-react';
 
@@ -23,7 +23,10 @@ export function HomePage() {
         </p>
         
         {isLoggedIn ? (
-          <Link to="/servers" className="btn btn-primary text-lg px-8 py-3">
+          <Link 
+            to="/servers" 
+            className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium rounded-lg bg-primary-600 hover:bg-primary-700 text-white transition-colors"
+          >
             Browse Servers
           </Link>
         ) : (

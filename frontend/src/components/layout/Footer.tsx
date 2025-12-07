@@ -1,22 +1,29 @@
 // src/components/layout/Footer.tsx
-// Site footer
+// Site footer with navigation links
+
+import { Link } from 'react-router-dom';
 
 export function Footer() {
   return (
-    <footer className="bg-dark-800 border-t border-dark-700 py-6">
+    <footer className="bg-dark-900 border-t border-dark-800 py-6">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-dark-400 text-sm">
+          <p className="text-dark-500 text-sm">
             Squad Karma - Community project, not affiliated with OWI
           </p>
-          <div className="flex items-center gap-4 text-sm text-dark-400">
-            <a href="#" className="hover:text-dark-200 transition-colors">
+          <div className="flex items-center gap-4 text-sm text-dark-500">
+            <Link to="/about" className="hover:text-dark-300 transition-colors">
               About
-            </a>
-            <a href="#" className="hover:text-dark-200 transition-colors">
+            </Link>
+            <Link to="/privacy" className="hover:text-dark-300 transition-colors">
               Privacy
-            </a>
-            <a href="#" className="hover:text-dark-200 transition-colors">
+            </Link>
+            <a 
+              href="https://github.com/Metroseksuaali/SquadKarma" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-dark-300 transition-colors"
+            >
               GitHub
             </a>
           </div>
