@@ -9,6 +9,9 @@ import RedisStore from 'fastify-session-redis-store';
 import { AppError } from './utils/errors.js';
 import { redis } from './db/redis.js';
 import { authRoutes } from './modules/auth/index.js';
+import { serverRoutes } from './modules/servers/index.js';
+import { playerRoutes } from './modules/players/index.js';
+import { voteRoutes, reasonCategoryRoutes } from './modules/votes/index.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -96,10 +99,10 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register route modules
   await app.register(authRoutes, { prefix: '/auth' });
-  // TODO: Enable these as implemented
-  // await app.register(serverRoutes, { prefix: '/api/servers' });
-  // await app.register(playerRoutes, { prefix: '/api/players' });
-  // await app.register(voteRoutes, { prefix: '/api/votes' });
+  await app.register(serverRoutes, { prefix: '/api/servers' });
+  await app.register(playerRoutes, { prefix: '/api/players' });
+  await app.register(voteRoutes, { prefix: '/api/votes' });
+  await app.register(reasonCategoryRoutes, { prefix: '/api/reason-categories' });
 
   return app;
 }
