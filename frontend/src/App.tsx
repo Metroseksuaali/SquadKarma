@@ -5,8 +5,7 @@ import { ServersPage } from '@pages/ServersPage'
 import { PlayerPage } from '@pages/PlayerPage'
 import { SearchPage } from '@pages/SearchPage'
 import { NotFoundPage } from '@pages/NotFoundPage'
-import { usePostLoginRedirect } from '@/hooks/usePostLoginRedirect'
-import { useSessionExpiry } from '@/hooks/useSessionExpiry'
+import { usePostLoginRedirect, useSessionExpiry } from '@/hooks'
 
 function App() {
   // Handle post-login redirect to intended destination

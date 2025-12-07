@@ -2,7 +2,7 @@
 // Landing page
 
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { SteamLoginButton } from '@/components/features/auth';
 import { ThumbsUp, Shield, Users } from 'lucide-react';
 
