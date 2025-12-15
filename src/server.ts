@@ -6,42 +6,43 @@ import 'dotenv/config';
 import { buildApp } from './app.js';
 import { prisma } from './db/client.js';
 import { redis } from './db/redis.js';
+import { logger } from './utils/logger.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
 async function start() {
-  console.log('🚀 Starting Squad Karma API...');
+  logger.info('Starting Squad Karma API...');
 
   try {
     // Test database connection
     await prisma.$connect();
-    console.log('✅ Database connected');
+    logger.info('Database connected');
 
     // Test Redis connection
     await redis.ping();
-    console.log('✅ Redis connected');
+    logger.info('Redis connected');
 
     // Build and start Fastify
     const app = await buildApp();
     
     await app.listen({ port: PORT, host: HOST });
-    console.log(`✅ Server running at http://${HOST}:${PORT}`);
+    logger.info({ port: PORT, host: HOST }, 'Server running');
 
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    logger.error({ err: error }, 'Failed to start server');
     process.exit(1);
   }
 }
 
 // Graceful shutdown
 async function shutdown() {
-  console.log('\n🛑 Shutting down...');
+  logger.info('Shutting down...');
   
   await prisma.$disconnect();
   redis.disconnect();
   
-  console.log('👋 Goodbye!');
+  logger.info('Shutdown complete');
   process.exit(0);
 }
 

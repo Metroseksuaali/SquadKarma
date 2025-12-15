@@ -1,7 +1,7 @@
-# Squad Karma - Project Context for Claude
+# Squad Karma - Distributed POC - Project Context for Claude
 
 > This file contains all essential context about the project for Claude assistant.
-> Update this file as the project progresses.
+> **NOTE: This project is pivoting from centralized web-based to distributed POC architecture.**
 
 ---
 
@@ -29,279 +29,313 @@ git push origin feature/your-feature-name
 ```
 
 ### Branch Naming
-- `feature/` - New features (e.g., `feature/steam-auth`)
-- `fix/` - Bug fixes (e.g., `fix/cooldown-logic`)
-- `docs/` - Documentation (e.g., `docs/api-readme`)
+- `feature/` - New features (e.g., `feature/log-parser`)
+- `fix/` - Bug fixes (e.g., `fix/session-overlap`)
+- `docs/` - Documentation (e.g., `docs/poc-spec`)
 - `refactor/` - Code refactoring
 
 ---
 
-## 🎯 Project Goal
+## 🎯 Project Goal - HYBRID DISTRIBUTED ARCHITECTURE
 
-**Squad Karma** is a community project that provides a reputation system for Squad game players.
+**Squad Karma** uses a **hybrid distributed, proof-of-presence reputation system** for Squad game players.
 
-### Core Features:
-1. **Steam Login** - Users authenticate with their Steam account
-2. **Server & Player Search** - Select a server and find players
-3. **Voting** - Give thumbs up/down + reason category
-4. **Reputation Viewing** - See player's overall reputation and history
-5. **Cooldown** - Same user can only vote for the same player once per hour
+### Architecture Model
+**Hybrid approach:**
+- **ONE central Discord bot** (you maintain) - handles all Discord interactions
+- **Multiple distributed nodes** (server operators run) - track sessions and validate votes
+- Bot queries node APIs via HTTP to validate votes and check player sessions
+
+### Core Concept: Proof of Presence
+Squad server operators run a **node** that:
+1. **Parses server logs** to track actual player sessions
+2. **Provides HTTP API** for the central bot to query
+3. **Validates votes** - only allows votes if both players were present together
+4. **Stores sessions/votes locally** in SQLite
+5. **Replicates votes** to other trusted nodes (Phase 5)
+
+### Proof of Presence Rules
+A vote is ONLY valid if:
+- Voter was on the server (session exists)
+- Target was on the server (session exists)
+- Their sessions **overlapped for ≥5 minutes**
+- Vote is within **24 hours** of session ending
 
 ### What it's NOT:
-- Official OWI project
-- A purely negative "lynch mob service"
+- Centralized web service (anymore)
+- Purely negative "lynch mob service"
 - Free-text based (to prevent harassment)
+- Official OWI project
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Hybrid Distributed Architecture
 
 ### Tech Stack
 
-| Layer | Technology | Why |
-|-------|------------|-----|
-| **Frontend** | React + TypeScript + Vite | Component-based, fast development |
-| **Styling** | Tailwind CSS | Utility-first, dark theme |
-| **State** | TanStack Query + Zustand | Server state + client state separately |
-| **Backend** | Node.js + Fastify + TypeScript | Fast, Steam libraries available |
-| **Database** | PostgreSQL + Prisma ORM | Relational database, type safety |
-| **Cache** | Redis | Cooldown, rate limiting, sessions |
-| **Auth** | @fastify/passport + node-steam-openid | Steam OpenID |
+| Component | Technology | Why |
+|-----------|------------|-----|
+| **Runtime** | Node.js 20+ | Discord.js compatibility, async I/O |
+| **Language** | TypeScript | Type safety, better tooling |
+| **Database** | SQLite + Prisma | Local-first, no server setup needed |
+| **Discord** | discord.js v14 | Official Discord library |
+| **Auth** | Steam OpenID | Link Discord ↔ Steam identity (Phase 3) |
+| **API** | Fastify | Fast, low overhead for bot-to-node communication |
+| **Log Parsing** | Custom (inspired by SquadJS) | Full control, no dependencies |
 
-### Folder Structure
+### Project Structure
 
 ```
-SquadKarma/
-├── frontend/                 # React application
+squad-karma/
+├── bot/                     # Central Discord Bot (you run)
 │   ├── src/
-│   │   ├── components/       # UI components
-│   │   │   ├── ui/          # Common (Button, Input, Card)
-│   │   │   ├── layout/      # Layout (Header, Footer)
-│   │   │   └── features/    # Feature-specific
-│   │   ├── pages/           # Page components (routing)
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── services/        # API calls
-│   │   ├── store/           # Zustand state
-│   │   ├── types/           # TypeScript types
-│   │   └── utils/           # Utility functions
-│   └── public/              # Static files
+│   │   ├── commands/        # Slash commands
+│   │   │   ├── register-node.ts  # Node registration
+│   │   │   ├── node-status.ts    # Health checks
+│   │   │   └── help.ts
+│   │   ├── discord/         # Discord client
+│   │   ├── services/        # Node registry
+│   │   ├── db/              # Prisma client (SQLite)
+│   │   └── index.ts
+│   ├── prisma/
+│   │   └── schema.prisma    # NodeRegistry, UserLink
+│   └── package.json
 │
-├── src/                      # Backend (Node.js)
-│   ├── config/              # Environment variables
-│   ├── db/                  # Database connections
-│   ├── middleware/          # Fastify middlewares
-│   ├── modules/             # Feature modules
-│   │   ├── auth/           # Steam authentication
-│   │   ├── users/          # User management
-│   │   ├── servers/        # Server list
-│   │   ├── players/        # Player data
-│   │   ├── votes/          # Voting logic
-│   │   └── reputation/     # Reputation calculation
-│   └── utils/               # Utility functions
-│
-├── prisma/                   # Database schema
-│   ├── schema.prisma        # Data model
-│   └── seed.ts              # Base categories
-│
-└── Claude.md                 # This file
+└── node/                    # Distributed Node (server operators run)
+    ├── src/
+    │   ├── api/             # HTTP API for bot
+    │   │   ├── routes/      # /stats, /session, /reputation
+    │   │   ├── middleware/  # API key authentication
+    │   │   └── server.ts
+    │   ├── services/
+    │   │   └── log-parser/  # Squad log parsing
+    │   ├── db/              # Prisma client (SQLite)
+    │   └── index.ts
+    ├── prisma/
+    │   └── schema.prisma    # Session, Vote models
+    └── package.json
 ```
 
 ---
 
-## 📊 Data Model
+## 📊 Data Model (SQLite)
 
-### Entities
+### Bot Database (`bot/squad-karma-bot.db`)
 
 ```
-User (Authenticated user)
-├── id: string (cuid)
-├── steam64: string (unique)
-├── displayName: string
-├── avatarUrl: string?
-├── isBanned: boolean
-└── votes: Vote[]
+NodeRegistry (Node registrations)
+├── id: INTEGER PRIMARY KEY
+├── guildId: TEXT UNIQUE (Discord server ID)
+├── serverId: TEXT (node identifier)
+├── serverName: TEXT
+├── apiUrl: TEXT (https://server.com:3000)
+├── apiKey: TEXT (encrypted with AES-256-GCM)
+├── registeredBy: TEXT (Discord user ID)
+├── isActive: BOOLEAN
+├── registeredAt: DATETIME
+└── lastHealthCheck: DATETIME (nullable)
 
-Server (Squad server)
-├── id: string (cuid)
-├── name: string
-├── ip: string
-├── port: number
-├── isActive: boolean
-└── votes: Vote[]
-
-Player (Vote target)
-├── steam64: string (PK)
-├── lastKnownName: string
-├── firstSeenAt: DateTime
-├── lastSeenAt: DateTime
-└── receivedVotes: Vote[]
-
-Vote (Individual vote)
-├── id: string (cuid)
-├── voterSteam64: string (FK → User)
-├── targetSteam64: string (FK → Player)
-├── serverId: string (FK → Server)
-├── direction: UP | DOWN
-├── reasonCategoryId: number (FK)
-└── createdAt: DateTime
-
-ReasonCategory (Reason category)
-├── id: number (autoincrement)
-├── name: string (unique)
-├── type: POSITIVE | NEGATIVE | NEUTRAL
-├── sortOrder: number
-└── votes: Vote[]
+UserLink (Discord ↔ Steam identity - Phase 3)
+├── discordId: TEXT PRIMARY KEY
+├── steam64: TEXT NOT NULL UNIQUE
+├── linkedAt: DATETIME
+└── verified: BOOLEAN
 ```
 
-### Reason Categories (seed data)
+### Node Database (`node/squad-karma.db`)
 
-**Negative:**
-- Trolling, Teamkilling, Toxic behavior
-- Bad at vehicles, Mic spam, Not following orders
-- Griefing, AFK / Idle
+```
+Session (Player sessions from logs)
+├── id: INTEGER PRIMARY KEY
+├── steam64: TEXT NOT NULL
+├── playerName: TEXT
+├── joinedAt: DATETIME NOT NULL
+├── leftAt: DATETIME (nullable if still online)
+└── serverId: TEXT (node identifier)
+
+Vote (Individual vote - Phase 4)
+├── id: INTEGER PRIMARY KEY
+├── voterSteam64: TEXT NOT NULL
+├── targetSteam64: TEXT NOT NULL
+├── direction: TEXT ('UP' | 'DOWN')
+├── reasonCategory: TEXT
+├── voterSessionId: INTEGER (FK → Session)
+├── targetSessionId: INTEGER (FK → Session)
+├── createdAt: DATETIME
+└── replicatedFrom: TEXT (nullable, source node ID - Phase 5)
+```
+
+### Reason Categories
 
 **Positive:**
 - Good squad leader, Helpful, Good pilot/driver
 - Team player, Good communication, Skilled player
 - Good commander
 
+**Negative:**
+- Trolling, Teamkilling, Toxic behavior
+- Bad at vehicles, Mic spam, Not following orders
+- Griefing, AFK / Idle
+
 **Neutral:**
 - New player
 
 ---
 
-## 🔌 API Endpoints
+## 🔌 Discord Bot Commands
 
-### Auth
+### User Commands (Phase 3+)
 ```
-GET  /auth/steam              # Start Steam login
-GET  /auth/steam/callback     # Steam returns here
-GET  /auth/me                 # Returns logged-in user
-POST /auth/logout             # Log out
-```
-
-### Servers
-```
-GET  /api/servers             # List of servers
-GET  /api/servers/:id         # Single server
-GET  /api/servers/:id/players # Players on server (TODO: RCON)
+/help                          # Show available commands and usage guide
+/link <steam_profile>          # Link Discord to Steam account (Phase 3)
+/vote @user <up|down> <reason> # Vote for player (Phase 4)
+/rep <steam_id>                # Check player reputation (Phase 4)
+/session [steam64]             # Check session (Phase 3+)
+/whoami                        # Show linked Steam account (Phase 3)
 ```
 
-### Players
+### Admin Commands (Implemented)
 ```
-GET  /api/players/:steam64           # Player details
-GET  /api/players/:steam64/reputation # Reputation stats
-GET  /api/players/search?q=          # Search by name
+/register-node    # Register Squad server node with bot (Administrator only)
+/node-status      # Check registered node health and statistics
+/unregister-node  # Remove node registration (Phase 3)
 ```
 
-### Votes
+---
+
+## 🔌 Node HTTP API Endpoints
+
+### Implemented (Phase 2)
 ```
-POST /api/votes                      # Submit vote
-GET  /api/votes/cooldown/:steam64    # Check cooldown
-GET  /api/reason-categories          # Reason categories
+GET  /api/health                    # Health check (no auth)
+GET  /api/stats                     # Node statistics (auth required)
+GET  /api/session/:steam64          # Get player session (auth required)
+POST /api/session/validate-overlap  # Validate session overlap (auth required)
+GET  /api/reputation/:steam64       # Get player reputation (auth required)
 ```
+
+### Future (Phase 5 - Replication)
+```
+POST /api/replicate/votes        # Receive votes from other nodes
+GET  /api/replicate/health       # Node-to-node health check
+```
+
+### Authentication
+- Bearer token authentication (API key)
+- API keys stored encrypted in bot database
+- API keys validated on every request (except /api/health)
 
 ---
 
 ## 🔐 Business Rules
 
 ### Voting Restrictions
-1. **Cooldown**: 1 vote / hour / (voter + target) pair
-2. **Rate limit**: Max 10 votes / 10 min (globally per user)
-3. **Authentication**: Only logged-in users can vote
-4. **Ban**: Banned users cannot vote but can view
+1. **Proof of Presence**: Voter and target must have overlapped ≥5 minutes
+2. **Time Window**: Vote within 24 hours of session ending
+3. **Authentication**: Voter must have linked Discord ↔ Steam account
+4. **No Self-Votes**: Cannot vote for yourself
+5. **Rate Limit**: Max 10 votes / 10 min per user (anti-spam)
 
-### Validations
-- Steam64 ID: 17 digits, starts with "7656119"
-- Direction: "UP" or "DOWN"
-- ReasonCategoryId: Existing active category
+### Session Tracking
+- Parsed from Squad server logs (`LogSquad.txt`)
+- Join event: Extract Steam64, name, timestamp
+- Disconnect event: Update session end time
+- Sessions stored in local SQLite database
 
-### Anonymity
-- Regular users cannot see who voted for whom
-- Admin can see audit log (future feature)
+### Vote Replication
+- Votes replicated to trusted peer nodes
+- Marked with `replicatedFrom` to prevent duplicates
+- Conflict resolution: first vote wins (by timestamp)
 
 ---
 
-## 🚀 Development Phases
+## 🚀 POC Development Phases
 
-### ✅ Phase 1: Foundation (COMPLETE)
-- [x] Project folder structure
-- [x] Package.json and dependencies
-- [x] TypeScript configuration
-- [x] Prisma schema
-- [x] Basic Fastify application
-- [x] Redis helper functions (cooldown, rate limit)
-- [x] Error classes
-- [x] Frontend base (React + Vite + Tailwind)
+### ✅ Phase 0: Planning (COMPLETE)
+- [x] Create `/docs/PROJECT_SPEC.md`
+- [x] Create `/docs/POC_ROADMAP.md`
+- [x] Update Claude.md with POC context
+- [x] Pivot to hybrid architecture
 
-### 🔄 Phase 2: Authentication (NEXT)
-- [ ] Steam OpenID integration
-- [ ] Session management (Redis)
-- [ ] Auth middleware
-- [ ] /auth/* routes
+### ✅ Phase 1: Log Parser (COMPLETE)
+- [x] Set up `node/` directory structure
+- [x] Design Prisma schema for SQLite
+- [x] Implement Squad log parser
+- [x] Test with sample/real logs
+- [x] Session tracking works correctly
 
-### ⏳ Phase 3: Servers and Players
-- [ ] Servers CRUD
-- [ ] Players search/creation
-- [ ] Seed data for servers
+### ✅ Phase 2: Hybrid Architecture (COMPLETE)
+- [x] Create separate `bot/` directory for central Discord bot
+- [x] Implement node registry system with encryption
+- [x] Build `/register-node`, `/node-status`, `/help` commands
+- [x] Add HTTP API to node (Fastify + routes)
+- [x] Implement API key authentication
+- [x] Create comprehensive setup documentation
 
-### ⏳ Phase 4: Voting Logic
-- [ ] Vote endpoint
-- [ ] Cooldown logic
-- [ ] Rate limiting
-- [ ] Validations
+### ⏳ Phase 3: Steam OAuth (NEXT)
+- [ ] Implement Steam OpenID flow in bot
+- [ ] Link Discord ID ↔ Steam64 (UserLink model)
+- [ ] `/link`, `/unlink`, `/whoami` commands
+- [ ] Update `/session` to use linked accounts
+- [ ] `/unregister-node` command
 
-### ⏳ Phase 5: Reputation
-- [ ] Aggregations (up/down count)
-- [ ] Top categories
-- [ ] Time series data
-- [ ] Server-specific breakdown
+### ⏳ Phase 4: Voting + Proof of Presence
+- [ ] Implement `/vote` command in bot
+- [ ] Bot queries node API for session validation
+- [ ] Store votes on node
+- [ ] `/rep` command to show reputation
+- [ ] Reason categories implementation
 
-### ⏳ Phase 6: Polish
-- [ ] Error handling
-- [ ] Loading states
-- [ ] Toast notifications
-- [ ] Mobile responsive
+### ⏳ Phase 5: Node-to-Node Replication
+- [ ] Node-to-node vote sharing API
+- [ ] Authentication between nodes
+- [ ] Test with 2+ nodes
+- [ ] Conflict resolution (first vote wins)
+- [ ] Bot aggregates reputation across all nodes
 
-### ⏳ Future (v2+)
-- [ ] Admin panel
-- [ ] RCON integration (live player list)
-- [ ] WebSocket (real-time updates)
-- [ ] Audit logs
+**Current Status:** Phase 2 Complete - Hybrid architecture fully implemented
+**Next:** Phase 3 - Steam OAuth integration
 
 ---
 
 ## 🛠️ Development Commands
 
-### Backend
+### Bot (Central Discord Bot)
 ```bash
-cd SquadKarma
+cd bot
 npm install              # Install dependencies
-npm run dev              # Start dev server
-npm run db:push          # Sync schema to database
-npm run db:seed          # Add seed data
+npm run dev              # Start bot with hot reload
+npm run build            # Compile TypeScript
+npm start                # Run production build
+npm run db:generate      # Generate Prisma client
+npm run db:push          # Sync schema to SQLite
 npm run db:studio        # Open Prisma Studio
 ```
 
-### Frontend
+### Node (Distributed Squad Server Node)
 ```bash
-cd SquadKarma/frontend
+cd node
 npm install              # Install dependencies
-npm run dev              # Start Vite dev server
-npm run build            # Production build
+npm run dev              # Start node (API + log parser)
+npm run build            # Compile TypeScript
+npm start                # Run production build
+npm run db:generate      # Generate Prisma client
+npm run db:push          # Sync schema to SQLite
+npm run test             # Run tests
+npm run test:simulate    # Generate test logs
 ```
 
-### Databases (Docker)
+### Testing
 ```bash
-# PostgreSQL
-docker run -d --name squad-postgres \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=squad_karma \
-  -p 5432:5432 postgres:15
+# Node tests
+npm run test:parser      # Test log parser
+npm run test:simulate    # Generate live test logs
 
-# Redis
-docker run -d --name squad-redis \
-  -p 6379:6379 redis:7
+# Integration testing
+# 1. Start bot: cd bot && npm run dev
+# 2. Start node: cd node && npm run dev
+# 3. Register node: /register-node in Discord
+# 4. Check status: /node-status in Discord
 ```
 
 ---
@@ -313,23 +347,19 @@ docker run -d --name squad-redis \
 - No `any` types (except temporarily)
 - No `I` prefix for interface names
 - Enums in SCREAMING_SNAKE_CASE
+- **All code, comments, commits in ENGLISH** (no Finnish)
 
-### React
-- Functional components
-- Custom hooks with `use` prefix
-- Props interfaces alongside component
-- Lazy loading for large pages
-
-### Backend
-- Modular structure (auth, users, votes...)
+### Node.js
+- Modular structure (services, Discord, API)
 - Service layer for business logic
-- Route layer for HTTP handling
 - Zod for validation
+- Graceful error handling
 
 ### Git
 - Conventional Commits (feat:, fix:, docs:...)
-- Feature branches
-- PRs before merging to main
+- Feature branches from `dev`
+- PRs before merging
+- **NEVER push directly to dev or main**
 
 ---
 
@@ -337,64 +367,129 @@ docker run -d --name squad-redis \
 
 ### Security
 - Never store Steam API key in repo
-- Session secret minimum 32 characters
-- Rate limiting prevents spam attacks
-- Input validation for all endpoints
+- Validate all Steam64 IDs (17 digits, starts with `7656119`)
+- Rate limit Discord commands and API endpoints
+- Whitelist trusted nodes for replication
+- Use HTTPS for node-to-node communication
 
 ### Performance
-- Redis for cooldown checks (no DB queries)
-- Database indexes (steam64, createdAt)
-- Aggregations can be cached later
+- SQLite is fast for reads, watch for write contention
+- Index steam64 and createdAt columns
+- Use Discord embeds for rich formatting
+- Cache reputation queries (5 min TTL)
 
-### User Experience
-- Clear error messages
-- Loading states for all async operations
-- Mobile-first responsive design
-- Dark theme (Squad-inspired)
+### Log Parsing
+- Squad logs format based on [SquadJS](https://github.com/Team-Silver-Sphere/SquadJS)
+- Watch for log rotation
+- Handle server restarts (sessions left incomplete)
+- Parse timestamps in UTC
+
+### Discord Bot
+- Use slash commands (not prefix commands)
+- Handle rate limits gracefully
+- Provide clear error messages
+- DM user for sensitive info (like `/link` URL)
+
+### Hybrid Architecture
+- Bot is centralized (you run one instance)
+- Nodes are distributed (server operators run their own)
+- Bot queries node APIs via HTTP
+- API keys encrypted with AES-256-GCM before storage
+- Health checks run automatically every 5 minutes
+- HTTPS required for all node API URLs
 
 ---
 
 ## 🔗 Useful Links
 
+### Documentation
+- [HYBRID_SETUP.md](docs/HYBRID_SETUP.md) - Complete setup guide for bot and nodes
+- [HYBRID_IMPLEMENTATION_SUMMARY.md](docs/HYBRID_IMPLEMENTATION_SUMMARY.md) - Implementation summary
+- [ARCHITECTURE_HYBRID.md](docs/ARCHITECTURE_HYBRID.md) - Hybrid architecture specification
+- [POC_ROADMAP.md](docs/POC_ROADMAP.md) - Detailed roadmap with tasks
+- [Bot README](bot/README.md) - Bot-specific documentation
+
+### External Resources
+- [SquadJS](https://github.com/Team-Silver-Sphere/SquadJS) - Squad server framework
+- [squadLogs](https://github.com/JkSchrack/squadLogs) - Log parsing tool
+- [squad-stat-source](https://github.com/arukanoido/squad-stat-source) - High performance log extraction
+- [Offworld Industries Log Documentation](https://offworldindustries.zendesk.com/hc/en-us/articles/360047108974-Grabbing-Squad-Logs-for-Support)
 - [Steam Web API](https://steamcommunity.com/dev)
-- [Fastify Docs](https://fastify.dev/docs/latest/)
+- [discord.js Guide](https://discordjs.guide/)
 - [Prisma Docs](https://www.prisma.io/docs)
-- [TanStack Query](https://tanstack.com/query/latest)
-- [Tailwind CSS](https://tailwindcss.com/docs)
+- [Fastify Docs](https://fastify.dev/docs/latest/)
 
 ---
 
 ## 📚 Context7 Compatibility
 
-Code has been verified and updated according to Context7 documentation:
-
 | Library | Version | Notes |
 |---------|---------|-------|
-| **Fastify** | 4.x | Basic structure follows documentation |
-| **Prisma** | 6.x | Uses `@prisma/adapter-pg` adapter (Context7 recommendation) |
-| **ioredis** | 5.x | Import: `import Redis from 'ioredis'` |
-| **@fastify/passport** | 3.x | Authenticator class + secureSession |
-| **@fastify/cors** | 9.x | Registration follows documentation |
-| **Zod** | 3.x | Environment variable validation |
+| **Node.js** | 20+ | LTS version |
+| **Prisma** | 6.x | SQLite provider (no adapter needed) |
+| **discord.js** | 14.x | Latest stable |
+| **Fastify** | 4.x | REST API for bot-to-node communication |
+| **@fastify/cors** | 8.x | CORS support for API |
+| **Zod** | 3.x | Validation |
+| **TypeScript** | 5.x | Strict mode |
 
-### Prisma Adapter Usage
+### Prisma SQLite Usage
 ```typescript
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
+// prisma/schema.prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:./squad-karma.db"
+}
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+// src/db/client.ts
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 ```
 
-### @fastify/passport Usage
+### discord.js v14 Usage
 ```typescript
-import { Authenticator } from '@fastify/passport';
+import { Client, GatewayIntentBits, SlashCommandBuilder } from 'discord.js';
 
-const fastifyPassport = new Authenticator();
-app.register(fastifyPassport.initialize());
-app.register(fastifyPassport.secureSession());
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
+
+client.on('ready', () => {
+  console.log('Bot is ready!');
+});
 ```
 
 ---
 
-*Updated: Context7 verification completed*
+## 🗂️ Old Architecture (Deprecated)
+
+The original centralized architecture with React frontend, PostgreSQL, and Redis has been **deprecated** in favor of the hybrid distributed POC.
+
+Old code remains in the repo but should not be extended. Focus all new development on the `bot/` and `node/` directories.
+
+---
+
+## 🎉 Current Implementation Status
+
+### What's Working Now
+- ✅ **Bot:** Central Discord bot with node registry
+- ✅ **Node:** HTTP API with session tracking and log parsing
+- ✅ **Commands:** `/register-node`, `/node-status`, `/help`
+- ✅ **API:** Health, stats, session, reputation endpoints
+- ✅ **Security:** API key authentication and encryption
+- ✅ **Documentation:** Comprehensive setup guides
+
+### What's Next
+- 🔄 **Phase 3:** Steam OAuth integration for user linking
+- 🔄 **Phase 4:** Voting system with proof of presence
+- 🔄 **Phase 5:** Node-to-node vote replication
+
+### How to Get Started
+1. **Setup Bot:** See `docs/HYBRID_SETUP.md` Part 1
+2. **Setup Node:** See `docs/HYBRID_SETUP.md` Part 2
+3. **Register Node:** Use `/register-node` command in Discord
+4. **Test Integration:** Use `/node-status` to verify connection
+
+---
+
+*Updated: 2024-12-05 - Phase 2 Complete - Hybrid Architecture Implemented*

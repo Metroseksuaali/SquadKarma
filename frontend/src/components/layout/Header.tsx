@@ -1,6 +1,6 @@
 // src/components/layout/Header.tsx
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { SteamLoginButton, UserMenu } from '@/components/features/auth';
 
 export function Header() {

@@ -1,0 +1,98 @@
+// Squad Karma - Distributed POC Database Schema
+// Database: SQLite (local per node)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Player sessions extracted from Squad server logs
+model Session {
+  id         Int       @id @default(autoincrement())
+  steam64    String
+  playerName String
+  joinedAt   DateTime
+  leftAt     DateTime?  // Nullable if player is still online
+  serverId   String     // Node identifier (which server this is from)
+
+  // Relations
+  votesAsSender   Vote[] @relation("VoterSession")
+  votesAsReceiver Vote[] @relation("TargetSession")
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Indexes for performance
+  @@index([steam64])
+  @@index([joinedAt])
+  @@index([leftAt])
+  @@index([serverId])
+  @@index([steam64, joinedAt]) // Common query pattern
+}
+
+// Votes submitted via Discord bot
+model Vote {
+  id              Int       @id @default(autoincrement())
+  voterSteam64    String
+  targetSteam64   String
+  direction       String    // 'UP' or 'DOWN'
+  reasonCategory  String    // e.g., 'Good SL', 'Trolling', etc.
+
+  // Session references (proof of presence)
+  voterSessionId  Int
+  targetSessionId Int
+  voterSession    Session   @relation("VoterSession", fields: [voterSessionId], references: [id])
+  targetSession   Session   @relation("TargetSession", fields: [targetSessionId], references: [id])
+
+  // Replication tracking
+  replicatedFrom  String?   // Nullable - source node ID if replicated
+
+  createdAt       DateTime  @default(now())
+
+  // Indexes
+  @@index([voterSteam64])
+  @@index([targetSteam64])
+  @@index([createdAt])
+  @@index([replicatedFrom])
+
+  // Prevent duplicate votes for same session pair
+  @@unique([voterSessionId, targetSessionId])
+}
+
+// Discord user ↔ Steam account linking
+model UserLink {
+  id         Int       @id @default(autoincrement())
+  discordId  String    @unique
+  steam64    String    @unique
+  linkedAt   DateTime  @default(now())
+  verified   Boolean   @default(false)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Indexes
+  @@index([discordId])
+  @@index([steam64])
+}
+
+// Node configuration and trust relationships
+model TrustedNode {
+  id         Int       @id @default(autoincrement())
+  nodeId     String    @unique  // External node identifier
+  nodeName   String
+  apiUrl     String               // e.g., "https://node2.example.com:3000"
+  isActive   Boolean   @default(true)
+
+  addedAt    DateTime  @default(now())
+  lastSeenAt DateTime? // Last successful health check
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([nodeId])
+  @@index([isActive])
+}

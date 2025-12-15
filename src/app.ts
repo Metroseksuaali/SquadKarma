@@ -5,24 +5,25 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
+import csrfProtection from '@fastify/csrf-protection';
 import RedisStore from 'fastify-session-redis-store';
 import { AppError } from './utils/errors.js';
 import { redis } from './db/redis.js';
+import { logger } from './utils/logger.js';
+import { env } from './config/env.js';
 import { authRoutes } from './modules/auth/index.js';
+import { serverRoutes } from './modules/servers/index.js';
+import { playerRoutes } from './modules/players/index.js';
+import { voteRoutes, reasonCategoryRoutes } from './modules/votes/index.js';
 
-export async function buildApp(): Promise<FastifyInstance> {
+export async function buildApp() {
   const app = Fastify({
-    logger: {
-      level: process.env.NODE_ENV === 'development' ? 'info' : 'warn',
-      transport: process.env.NODE_ENV === 'development'
-        ? { target: 'pino-pretty', options: { colorize: true } }
-        : undefined,
-    },
+    logger: logger,
   });
 
   // CORS
   await app.register(cors, {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: env.FRONTEND_URL,
     credentials: true,
   });
 
@@ -38,14 +39,40 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Session with Redis store
   await app.register(session, {
-    secret: process.env.SESSION_SECRET || 'change-this-secret-min-32-chars!',
+    secret: env.SESSION_SECRET,
     store: redisStore,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.NODE_ENV === 'production',
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days in milliseconds
       sameSite: 'lax',
     },
+  });
+
+  // CSRF protection
+  await app.register(csrfProtection, {
+    sessionPlugin: '@fastify/session',
+    cookieOpts: {
+      signed: false,
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: env.NODE_ENV === 'production',
+    },
+  });
+
+  // Apply CSRF protection to all mutating requests
+  app.addHook('onRequest', (request, reply, done) => {
+    const mutatingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    if (mutatingMethods.includes(request.method)) {
+      // Skip CSRF for Steam OAuth callback (no token available there)
+      if (request.url.startsWith('/auth/steam/callback')) {
+        done();
+        return;
+      }
+      app.csrfProtection(request, reply, done);
+      return;
+    }
+    done();
   });
 
   // Health check
@@ -88,7 +115,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     // Unknown errors
     return reply.status(500).send({
       error: 'INTERNAL_ERROR',
-      message: process.env.NODE_ENV === 'development' 
+      message: env.NODE_ENV === 'development' 
         ? error.message 
         : 'An unexpected error occurred',
     });
@@ -96,10 +123,10 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register route modules
   await app.register(authRoutes, { prefix: '/auth' });
-  // TODO: Enable these as implemented
-  // await app.register(serverRoutes, { prefix: '/api/servers' });
-  // await app.register(playerRoutes, { prefix: '/api/players' });
-  // await app.register(voteRoutes, { prefix: '/api/votes' });
+  await app.register(serverRoutes, { prefix: '/api/servers' });
+  await app.register(playerRoutes, { prefix: '/api/players' });
+  await app.register(voteRoutes, { prefix: '/api/votes' });
+  await app.register(reasonCategoryRoutes, { prefix: '/api/reason-categories' });
 
   return app;
 }

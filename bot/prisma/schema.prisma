@@ -1,0 +1,49 @@
+// Squad Karma Bot - Database Schema
+// Stores node registry and user links
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Node Registry - Maps Discord servers to Squad server nodes
+model NodeRegistry {
+  id            Int       @id @default(autoincrement())
+  guildId       String    @unique  // Discord server ID
+  serverId      String               // Node identifier (e.g., "alpha-server")
+  serverName    String               // Display name
+  apiUrl        String               // https://alpha.squadserver.com:3000
+  apiKey        String               // Encrypted API key for authentication
+
+  registeredBy  String               // Discord user ID who registered
+  registeredAt  DateTime  @default(now())
+
+  isActive      Boolean   @default(true)
+  lastHealthCheck DateTime?          // Last successful ping
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([guildId])
+  @@index([isActive])
+}
+
+// User Links - Discord ↔ Steam account linking (Phase 3)
+model UserLink {
+  id         Int       @id @default(autoincrement())
+  discordId  String    @unique      // Discord user ID
+  steam64    String    @unique      // Steam64 ID
+
+  linkedAt   DateTime  @default(now())
+  verified   Boolean   @default(false)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([discordId])
+  @@index([steam64])
+}
