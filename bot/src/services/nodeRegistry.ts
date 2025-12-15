@@ -182,6 +182,140 @@ export async function healthCheckAllNodes(): Promise<void> {
 }
 
 /**
+ * Reputation data from a single node
+ */
+interface NodeReputationData {
+  steam64: string;
+  totalVotes: number;
+  upvotes: number;
+  downvotes: number;
+  netReputation: number;
+  categories: Record<string, { up: number; down: number }>;
+  recentVotes: Array<{
+    direction: string;
+    reasonCategory: string;
+    createdAt: string;
+    replicatedFrom: string | null;
+  }>;
+}
+
+/**
+ * Aggregated reputation from all nodes
+ */
+export interface AggregatedReputation {
+  steam64: string;
+  totalVotes: number;
+  upvotes: number;
+  downvotes: number;
+  netReputation: number;
+  categories: Record<string, { up: number; down: number }>;
+  recentVotes: Array<{
+    direction: string;
+    reasonCategory: string;
+    createdAt: string;
+    nodeName: string;
+  }>;
+  nodeCount: number;
+  nodeBreakdown: Array<{
+    nodeName: string;
+    upvotes: number;
+    downvotes: number;
+    netReputation: number;
+  }>;
+}
+
+/**
+ * Aggregate reputation from all active nodes
+ */
+export async function getAggregatedReputation(steam64: string): Promise<AggregatedReputation> {
+  const nodes = await getAllActiveNodes();
+
+  const aggregated: AggregatedReputation = {
+    steam64,
+    totalVotes: 0,
+    upvotes: 0,
+    downvotes: 0,
+    netReputation: 0,
+    categories: {},
+    recentVotes: [],
+    nodeCount: 0,
+    nodeBreakdown: [],
+  };
+
+  for (const node of nodes) {
+    try {
+      const decryptedKey = decryptApiKey(node.apiKey);
+
+      const response = await fetch(`${node.apiUrl}/api/reputation/${steam64}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${decryptedKey}`,
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!response.ok) {
+        console.warn(`Failed to get reputation from ${node.serverName}: ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json() as NodeReputationData;
+
+      // Aggregate totals
+      aggregated.totalVotes += data.totalVotes;
+      aggregated.upvotes += data.upvotes;
+      aggregated.downvotes += data.downvotes;
+      aggregated.nodeCount++;
+
+      // Aggregate categories
+      for (const [category, counts] of Object.entries(data.categories)) {
+        if (!aggregated.categories[category]) {
+          aggregated.categories[category] = { up: 0, down: 0 };
+        }
+        const aggCat = aggregated.categories[category];
+        if (aggCat) {
+          aggCat.up += counts.up;
+          aggCat.down += counts.down;
+        }
+      }
+
+      // Add recent votes with node name
+      for (const vote of data.recentVotes) {
+        aggregated.recentVotes.push({
+          direction: vote.direction,
+          reasonCategory: vote.reasonCategory,
+          createdAt: vote.createdAt,
+          nodeName: node.serverName,
+        });
+      }
+
+      // Add node breakdown
+      aggregated.nodeBreakdown.push({
+        nodeName: node.serverName,
+        upvotes: data.upvotes,
+        downvotes: data.downvotes,
+        netReputation: data.upvotes - data.downvotes,
+      });
+    } catch (error) {
+      console.warn(`Failed to query node ${node.serverName}:`, error);
+    }
+  }
+
+  // Calculate net reputation
+  aggregated.netReputation = aggregated.upvotes - aggregated.downvotes;
+
+  // Sort recent votes by date (newest first)
+  aggregated.recentVotes.sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  // Limit to 10 most recent
+  aggregated.recentVotes = aggregated.recentVotes.slice(0, 10);
+
+  return aggregated;
+}
+
+/**
  * Simple encryption for API keys (AES-256-GCM)
  * In production, use environment variable for encryption key
  */

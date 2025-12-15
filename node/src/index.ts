@@ -10,6 +10,7 @@ import { config } from './config/env.js';
 import { disconnectDatabase, checkDatabaseConnection } from './db/client.js';
 import { startLogParserService } from './services/log-parser/index.js';
 import { startApiServer } from './api/server.js';
+import { startReplicationSync } from './services/replication/index.js';
 
 /**
  * Main application startup
@@ -38,9 +39,9 @@ async function main() {
     // 3. Start log parser service (Phase 1)
     await startLogParserService();
 
-    // 4. Start Discord bot (Phase 2 - DEPRECATED in hybrid architecture)
-    // Discord bot is now centralized in bot/ directory
-    // await startDiscordBot();
+    // 4. Start replication sync service (Phase 5)
+    // Syncs votes with trusted nodes every 5 minutes
+    startReplicationSync(5 * 60 * 1000);
 
     console.log('\n✅ All services started successfully');
     console.log('📊 Node is now running...\n');
