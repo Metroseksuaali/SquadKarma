@@ -272,14 +272,14 @@ GET  /api/replicate/health       # Node-to-node health check
 - [x] Implement API key authentication
 - [x] Create comprehensive setup documentation
 
-### ⏳ Phase 3: Steam OAuth (NEXT)
-- [ ] Implement Steam OpenID flow in bot
-- [ ] Link Discord ID ↔ Steam64 (UserLink model)
-- [ ] `/link`, `/unlink`, `/whoami` commands
-- [ ] Update `/session` to use linked accounts
-- [ ] `/unregister-node` command
+### ✅ Phase 3: Steam OAuth (COMPLETE)
+- [x] Implement Steam OpenID flow in bot
+- [x] Link Discord ID ↔ Steam64 (UserLink model)
+- [x] `/link`, `/unlink`, `/whoami` commands
+- [x] Update `/session` to use linked accounts
+- [x] `/unregister-node` command
 
-### ⏳ Phase 4: Voting + Proof of Presence
+### ⏳ Phase 4: Voting + Proof of Presence (NEXT)
 - [ ] Implement `/vote` command in bot
 - [ ] Bot queries node API for session validation
 - [ ] Store votes on node
@@ -293,8 +293,8 @@ GET  /api/replicate/health       # Node-to-node health check
 - [ ] Conflict resolution (first vote wins)
 - [ ] Bot aggregates reputation across all nodes
 
-**Current Status:** Phase 2 Complete - Hybrid architecture fully implemented
-**Next:** Phase 3 - Steam OAuth integration
+**Current Status:** Phase 3 Complete - Steam OAuth integration implemented
+**Next:** Phase 4 - Voting system with proof of presence
 
 ---
 
@@ -474,13 +474,13 @@ Old code remains in the repo but should not be extended. Focus all new developme
 ### What's Working Now
 - ✅ **Bot:** Central Discord bot with node registry
 - ✅ **Node:** HTTP API with session tracking and log parsing
-- ✅ **Commands:** `/register-node`, `/node-status`, `/help`
+- ✅ **Commands:** `/register-node`, `/node-status`, `/help`, `/link`, `/unlink`, `/whoami`, `/session`, `/unregister-node`
 - ✅ **API:** Health, stats, session, reputation endpoints
 - ✅ **Security:** API key authentication and encryption
+- ✅ **Steam OAuth:** Discord ↔ Steam account linking with OpenID
 - ✅ **Documentation:** Comprehensive setup guides
 
 ### What's Next
-- 🔄 **Phase 3:** Steam OAuth integration for user linking
 - 🔄 **Phase 4:** Voting system with proof of presence
 - 🔄 **Phase 5:** Node-to-node vote replication
 
@@ -492,4 +492,4 @@ Old code remains in the repo but should not be extended. Focus all new developme
 
 ---
 
-*Updated: 2024-12-05 - Phase 2 Complete - Hybrid Architecture Implemented*
+*Updated: 2025-12-15 - Phase 3 Complete - Steam OAuth Integration Implemented*
