@@ -3,7 +3,7 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
 } from 'discord.js';
-import { getNodeByGuild } from '../services/nodeRegistry.js';
+import { getNodeByGuild, getAggregatedReputation } from '../services/nodeRegistry.js';
 import { getSteam64ForDiscord } from '../services/steamAuth.js';
 
 export const data = new SlashCommandBuilder()
@@ -19,6 +19,12 @@ export const data = new SlashCommandBuilder()
     option
       .setName('steam64')
       .setDescription('Steam64 ID to check directly (optional)')
+      .setRequired(false)
+  )
+  .addBooleanOption(option =>
+    option
+      .setName('all')
+      .setDescription('Aggregate reputation from ALL registered nodes (default: current server only)')
       .setRequired(false)
   );
 
@@ -93,34 +99,68 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    // Query node API for reputation
-    const response = await fetch(`${node.apiUrl}/api/reputation/${steam64}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${node.apiKey}`,
-      },
-      signal: AbortSignal.timeout(10000),
-    });
+    // Check if user wants aggregated reputation from all nodes
+    const aggregateAll = interaction.options.getBoolean('all') ?? false;
 
-    if (!response.ok) {
-      throw new Error(`API returned status ${response.status}`);
-    }
-
-    const repData = await response.json() as {
-      steam64: string;
+    let repData: {
       totalVotes: number;
       upvotes: number;
       downvotes: number;
       netReputation: number;
       categories: Record<string, { up: number; down: number }>;
-      recentVotes: Array<{
-        direction: string;
-        reasonCategory: string;
-        createdAt: string;
-        replicatedFrom: string | null;
-      }>;
-      timestamp: string;
+      recentVotes: Array<{ direction: string; reasonCategory: string; createdAt: string; nodeName?: string }>;
+      nodeCount?: number;
+      nodeBreakdown?: Array<{ nodeName: string; upvotes: number; downvotes: number; netReputation: number }>;
     };
+    let dataSource: string;
+
+    if (aggregateAll) {
+      // Aggregate reputation from all nodes
+      const aggregated = await getAggregatedReputation(steam64);
+      repData = {
+        totalVotes: aggregated.totalVotes,
+        upvotes: aggregated.upvotes,
+        downvotes: aggregated.downvotes,
+        netReputation: aggregated.netReputation,
+        categories: aggregated.categories,
+        recentVotes: aggregated.recentVotes,
+        nodeCount: aggregated.nodeCount,
+        nodeBreakdown: aggregated.nodeBreakdown,
+      };
+      dataSource = `${aggregated.nodeCount} node(s)`;
+    } else {
+      // Query single node API for reputation
+      const response = await fetch(`${node.apiUrl}/api/reputation/${steam64}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${node.apiKey}`,
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API returned status ${response.status}`);
+      }
+
+      const singleNodeData = await response.json() as {
+        steam64: string;
+        totalVotes: number;
+        upvotes: number;
+        downvotes: number;
+        netReputation: number;
+        categories: Record<string, { up: number; down: number }>;
+        recentVotes: Array<{
+          direction: string;
+          reasonCategory: string;
+          createdAt: string;
+          replicatedFrom: string | null;
+        }>;
+        timestamp: string;
+      };
+
+      repData = singleNodeData;
+      dataSource = node.serverName;
+    }
 
     // Determine reputation color and emoji
     let color: number;
@@ -193,12 +233,27 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         const recentLines = repData.recentVotes.slice(0, 5).map(vote => {
           const emoji = vote.direction === 'UP' ? '👍' : '👎';
           const timestamp = Math.floor(new Date(vote.createdAt).getTime() / 1000);
-          return `${emoji} ${vote.reasonCategory} (<t:${timestamp}:R>)`;
+          const nodeInfo = vote.nodeName ? ` [${vote.nodeName}]` : '';
+          return `${emoji} ${vote.reasonCategory}${nodeInfo} (<t:${timestamp}:R>)`;
         });
 
         embed.addFields({
           name: '🕐 Recent Votes',
           value: recentLines.join('\n'),
+          inline: false,
+        });
+      }
+
+      // Add node breakdown for aggregated reputation
+      if (repData.nodeBreakdown && repData.nodeBreakdown.length > 1) {
+        const breakdownLines = repData.nodeBreakdown.map(node => {
+          const netStr = node.netReputation >= 0 ? `+${node.netReputation}` : `${node.netReputation}`;
+          return `${node.nodeName}: ${netStr} (${node.upvotes}↑ ${node.downvotes}↓)`;
+        });
+
+        embed.addFields({
+          name: '🌐 Per-Server Breakdown',
+          value: breakdownLines.join('\n'),
           inline: false,
         });
       }
@@ -210,7 +265,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       inline: false,
     });
 
-    embed.setFooter({ text: `Data from ${node.serverName}` });
+    embed.setFooter({ text: `Data from ${dataSource}` });
     embed.setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
