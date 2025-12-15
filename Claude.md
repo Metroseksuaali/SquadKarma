@@ -279,22 +279,22 @@ GET  /api/replicate/health       # Node-to-node health check
 - [x] Update `/session` to use linked accounts
 - [x] `/unregister-node` command
 
-### ⏳ Phase 4: Voting + Proof of Presence (NEXT)
-- [ ] Implement `/vote` command in bot
-- [ ] Bot queries node API for session validation
-- [ ] Store votes on node
-- [ ] `/rep` command to show reputation
-- [ ] Reason categories implementation
+### ✅ Phase 4: Voting + Proof of Presence (COMPLETE)
+- [x] Implement `/vote` command in bot
+- [x] Bot queries node API for session validation
+- [x] Store votes on node (POST /api/vote)
+- [x] `/rep` command to show reputation
+- [x] Reason categories implementation
 
-### ⏳ Phase 5: Node-to-Node Replication
+### ⏳ Phase 5: Node-to-Node Replication (NEXT)
 - [ ] Node-to-node vote sharing API
 - [ ] Authentication between nodes
 - [ ] Test with 2+ nodes
 - [ ] Conflict resolution (first vote wins)
 - [ ] Bot aggregates reputation across all nodes
 
-**Current Status:** Phase 3 Complete - Steam OAuth integration implemented
-**Next:** Phase 4 - Voting system with proof of presence
+**Current Status:** Phase 4 Complete - Voting system with proof of presence implemented
+**Next:** Phase 5 - Node-to-node replication
 
 ---
 
@@ -474,14 +474,15 @@ Old code remains in the repo but should not be extended. Focus all new developme
 ### What's Working Now
 - ✅ **Bot:** Central Discord bot with node registry
 - ✅ **Node:** HTTP API with session tracking and log parsing
-- ✅ **Commands:** `/register-node`, `/node-status`, `/help`, `/link`, `/unlink`, `/whoami`, `/session`, `/unregister-node`
-- ✅ **API:** Health, stats, session, reputation endpoints
+- ✅ **Commands:** `/register-node`, `/node-status`, `/help`, `/link`, `/unlink`, `/whoami`, `/session`, `/unregister-node`, `/vote`, `/rep`
+- ✅ **API:** Health, stats, session, reputation, vote endpoints
 - ✅ **Security:** API key authentication and encryption
 - ✅ **Steam OAuth:** Discord ↔ Steam account linking with OpenID
+- ✅ **Voting:** Proof of presence validation (5min overlap, 24h window)
+- ✅ **Reputation:** Vote aggregation with category breakdown
 - ✅ **Documentation:** Comprehensive setup guides
 
 ### What's Next
-- 🔄 **Phase 4:** Voting system with proof of presence
 - 🔄 **Phase 5:** Node-to-node vote replication
 
 ### How to Get Started
@@ -492,4 +493,4 @@ Old code remains in the repo but should not be extended. Focus all new developme
 
 ---
 
-*Updated: 2025-12-15 - Phase 3 Complete - Steam OAuth Integration Implemented*
+*Updated: 2025-12-15 - Phase 4 Complete - Voting System with Proof of Presence Implemented*
