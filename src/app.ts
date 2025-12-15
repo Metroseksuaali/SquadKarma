@@ -5,6 +5,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
+import csrfProtection from '@fastify/csrf-protection';
 import RedisStore from 'fastify-session-redis-store';
 import { AppError } from './utils/errors.js';
 import { redis } from './db/redis.js';
@@ -46,6 +47,32 @@ export async function buildApp() {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days in milliseconds
       sameSite: 'lax',
     },
+  });
+
+  // CSRF protection
+  await app.register(csrfProtection, {
+    sessionPlugin: '@fastify/session',
+    cookieOpts: {
+      signed: false,
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: env.NODE_ENV === 'production',
+    },
+  });
+
+  // Apply CSRF protection to all mutating requests
+  app.addHook('onRequest', (request, reply, done) => {
+    const mutatingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    if (mutatingMethods.includes(request.method)) {
+      // Skip CSRF for Steam OAuth callback (no token available there)
+      if (request.url.startsWith('/auth/steam/callback')) {
+        done();
+        return;
+      }
+      app.csrfProtection(request, reply, done);
+      return;
+    }
+    done();
   });
 
   // Health check

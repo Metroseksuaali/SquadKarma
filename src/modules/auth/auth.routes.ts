@@ -15,6 +15,15 @@ declare module 'fastify' {
 
 export async function authRoutes(app: FastifyInstance) {
   /**
+   * GET /auth/csrf-token
+   * Returns a CSRF token for use in subsequent requests
+   */
+  app.get('/csrf-token', async (request: FastifyRequest, reply: FastifyReply) => {
+    const token = reply.generateCsrf();
+    return { token };
+  });
+
+  /**
    * GET /auth/steam
    * Redirects user to Steam login page
    */
